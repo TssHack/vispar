@@ -103,7 +103,7 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 | macOS | `Vispar-*-mac-*.dmg` |
 | Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
 
-Both APKs are built on GitHub's runners by the **Android builds** workflow (`.github/workflows/android.yml`, no EAS account needed). They are signed with the standard debug key, so they install directly but are not meant for the Play Store. Install the TV APK from a USB drive or with `adb install`.
+Both APKs are built on GitHub's runners by the **Android builds** workflow (`.github/workflows/android.yml`, no EAS account needed). They are signed with the standard debug key, so they install directly but are not meant for the Play Store. Install the TV APK from a USB drive or with `adb install`. For emulators and Chromebooks there are smaller `-x86_64` APKs (`Vispar-*-android-x86_64.apk`, `Vispar-*-android-tv-x86_64.apk`).
 
 The desktop builds are produced by the **Desktop builds** workflow (`.github/workflows/desktop.yml`). Push a `v*` tag and the installers are attached to the release automatically.
 
@@ -172,7 +172,7 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 | macOS | `Vispar-*-mac-*.dmg` |
 | Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
 
-Both APKs are built on GitHub's runners by the **Android builds** workflow (`.github/workflows/android.yml`, no EAS account needed). They are signed with the standard debug key, so they install directly but are not meant for the Play Store. Install the TV APK from a USB drive or with `adb install`.
+Both APKs are built on GitHub's runners by the **Android builds** workflow (`.github/workflows/android.yml`, no EAS account needed). They are signed with the standard debug key, so they install directly but are not meant for the Play Store. Install the TV APK from a USB drive or with `adb install`. For emulators and Chromebooks there are smaller `-x86_64` APKs (`Vispar-*-android-x86_64.apk`, `Vispar-*-android-tv-x86_64.apk`).
 
 The desktop builds are produced by the **Desktop builds** workflow (`.github/workflows/desktop.yml`). Push a `v*` tag and the installers are attached to the release automatically.
 
