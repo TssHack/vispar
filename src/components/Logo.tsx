@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
@@ -11,12 +12,14 @@ import { Text } from './Text';
  */
 export function LogoMark({ size = 32, onDark = false }: { size?: number; onDark?: boolean }) {
   const { name } = useTheme();
+  // Unique per instance: a gradient defined inside a hidden copy (e.g. an inactive tab) cannot be referenced.
+  const gid = `vispar-amber-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const play = onDark || name === 'dark' ? '#F7F3EA' : '#16141C';
   return (
     <View aria-hidden style={{ width: size, height: size }}>
       <Svg width={size} height={size} viewBox="0 0 100 100">
         <Defs>
-          <LinearGradient id="vispar-amber" x1="0.15" y1="0.1" x2="0.85" y2="0.95">
+          <LinearGradient id={gid} x1="0.15" y1="0.1" x2="0.85" y2="0.95">
             <Stop offset="0" stopColor="#FFE0A0" />
             <Stop offset="0.5" stopColor="#F2B544" />
             <Stop offset="1" stopColor="#DB8520" />
@@ -25,7 +28,7 @@ export function LogoMark({ size = 32, onDark = false }: { size?: number; onDark?
         <Path
           d="M24 27 L50 73 L76 27"
           fill="none"
-          stroke="url(#vispar-amber)"
+          stroke={`url(#${gid})`}
           strokeWidth={11}
           strokeLinecap="round"
           strokeLinejoin="round"

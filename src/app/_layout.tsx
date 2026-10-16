@@ -37,7 +37,7 @@ function Shell() {
     SplashScreen.hideAsync().catch(() => {});
     startMonitor();
     void checkConnection();
-    const t = setTimeout(() => setMinShown(true), 1100);
+    const t = setTimeout(() => setMinShown(true), 2000);
     return () => clearTimeout(t);
   }, [done]);
 
@@ -57,13 +57,16 @@ function Shell() {
 
   if (!done) return null;
 
-  const booting = !minShown || net === 'checking';
-  if (booting || ((net === 'offline' || net === 'server') && !offlineOk)) {
+  // `?splash=hold` / `?splash=offline` pin the splash for design review and screenshots.
+  const hold = Platform.OS === 'web' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('splash') : null;
+  const booting = !minShown || net === 'checking' || hold === 'hold';
+  const shownNet = hold === 'offline' ? 'offline' : net;
+  if (booting || hold === 'offline' || ((net === 'offline' || net === 'server') && !offlineOk)) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
         <StatusBar style={name === 'dark' ? 'light' : 'dark'} />
         <BootScreen
-          status={booting ? 'checking' : (net as 'offline' | 'server')}
+          status={booting ? 'checking' : (shownNet as 'offline' | 'server')}
           onRetry={() => void checkConnection()}
           onContinue={() => setOfflineOk(true)}
         />

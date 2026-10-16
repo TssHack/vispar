@@ -109,6 +109,9 @@ export const parseRelease = (o: Obj): GithubRelease | null => {
     publishedAt: str(o.published_at),
     prerelease: o.prerelease === true,
     draft: o.draft === true,
+    assets: assets
+      .map((a) => ({ name: str(a.name), url: str(a.browser_download_url), size: num(a.size) }))
+      .filter((a) => a.name && a.url),
     apkUrl: apk ? str(apk.browser_download_url) || null : null,
     apkSize: apk ? num(apk.size) || null : null,
   };

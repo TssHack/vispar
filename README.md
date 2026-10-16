@@ -1,156 +1,185 @@
-<p align="center"><img src="assets/brand/logo-lockup.png" alt="ویسپار" width="480"></p>
+<p align="center">
+  <img src="assets/brand/logo-lockup.png" alt="Vispar" width="420">
+</p>
 
-# ویسپار
+<p align="center">
+  <b>Movies and series, on every screen you own.</b><br>
+  One codebase for Android, iOS, the web, Android TV, Windows, macOS and Linux.
+</p>
 
-اپ فیلم و سریال برای **اندروید، iOS، وب و Android TV** از یک کدبیس، با Expo و React Native.
+<p align="center">
+  <a href="https://github.com/TssHack/vispar/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/TssHack/vispar/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/TssHack/vispar/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/TssHack/vispar?color=F2B544&label=release"></a>
+  <img alt="Expo SDK 58" src="https://img.shields.io/badge/Expo-SDK%2058-000020?logo=expo">
+  <img alt="React Native 0.88" src="https://img.shields.io/badge/React%20Native-0.88-20232A?logo=react">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white">
+  <img alt="RTL" src="https://img.shields.io/badge/RTL-Persian-F2B544">
+</p>
 
-طراحی و توسعه: **احسان فضلی** · [ehsanjs.ir](https://ehsanjs.ir)
+<p align="center">
+  <a href="README.fa.md">فارسی</a> · <a href="https://github.com/TssHack/vispar/releases/latest">Download</a> · <a href="https://ehsanjs.ir">Developer</a>
+</p>
 
-## امکانات
+<p align="center">
+  <img src="docs/screenshots/hero.jpg" alt="Vispar on phone: splash, home, catalog, details and the iOS install guide" width="100%">
+</p>
 
-**چندپلتفرمی:** اندروید، iOS، وب (PWA)، Android TV با ریموت، و ویندوز، مک و لینوکس.
+---
 
-**تماشا**
-- پلیر اختصاصی با نوار پیشرفت، جلو و عقب (۱۰، ۱۵ یا ۳۰ ثانیه)، دوبار ضربه برای پرش، سرعت پخش، تغییر کیفیت حین پخش و تمام‌صفحه با چرخش خودکار
-- ادامه از جای قبلی و پخش خودکار قسمت بعد با شمارش معکوس
-- پخش در پس‌زمینه و تصویر در تصویر (PiP)
-- میانبرهای کیبورد روی وب: فاصله، ← →، ↑ ↓، F، M، N
-- **پلیرهای خارجی:** VLC، MX Player، mpv، Just Player، Kodi، KMPlayer، XPlayer، nPlayer، Infuse و Outplayer. روی اندروید برنامه‌های نصب‌شده با آیکن‌شان اول لیست می‌آیند. روی وب یک پلی‌لیست ‎.m3u ساخته می‌شود که با VLC یا PotPlayer باز می‌شود.
-- **دانلودرها:** ADM، 1DM، 1DM+‎، FDM، مدیر دانلود سیستم، اشتراک‌گذاری و کپی لینک (برای IDM و JDownloader)
+## Why Vispar
 
-**کشف و مرور**
-- خانه با اسلایدر، ادامه‌ی تماشا، لیست من، تازه‌ترین‌ها، برترین‌ها از نظر IMDb و ردیف ژانرها
-- فیلتر چندگانه: ژانر، دهه، کشور، حداقل امتیاز IMDb و کیفیت موجود
-- مرتب‌سازی: تازه‌ترین، امتیاز، سال و الفبا
-- جستجو با فیلتر فیلم و سریال
-- فیلم‌ها و سریال‌های مشابه در صفحه‌ی جزئیات
-- **کتابخانه:** لیست من، ادامه‌ی تماشا و تاریخچه
+Vispar is a Persian-first (right-to-left) streaming client. It is built to feel native on a phone, comfortable with a TV remote, and at home in a desktop window, without maintaining three apps.
 
-**شخصی‌سازی**
-- تم سیستم، روشن یا تیره
-- پنج رنگ اصلی
-- اندازه‌ی پوسترها
-- ارقام فارسی یا انگلیسی
-- کاهش حرکت و انیمیشن
-- نمایش یا پنهان کردن امتیاز روی پوسترها
-- انتخاب بخش‌های صفحه‌ی خانه
-- کیفیت پیش‌فرض، پلیر و دانلودر پیش‌فرض
+- **One codebase, seven targets.** Expo + React Native with `react-native-web`, wrapped in Electron for desktop.
+- **Designed for the room it is in.** Bottom tabs on phones, a top bar on wide screens, and a labelled side rail with D-pad focus on TV.
+- **Fast to start, honest when offline.** A splash that actually tests the connection instead of spinning forever.
 
-**پلتفرم‌ها**
-- ریسپانسیو: گوشی، تبلت، دسکتاپ و Android TV با منوی کناری و فوکوس ریموت
-- راست‌به‌چپ کامل با فونت **عراد**
-- **به‌روزرسانی:** بررسی ریلیزهای گیت‌هاب برای APK جدید، به‌علاوه‌ی OTA با `expo-updates`
+## Highlights
 
-## اجرا
+| | |
+| --- | --- |
+| **Splash with a connection test** | The logo draws itself while two real checks run: the internet, then the content server. If either fails you get a clear page with *Retry* and *Continue offline* (your library still works). A banner appears if the connection drops later and clears itself when it returns. |
+| **A real player** | Seek bar, ±10/15/30 s skip, double-tap to seek, playback speed, in-player quality switch, fit/fill/stretch, resume where you left off, autoplay next episode, background playback and picture-in-picture. |
+| **External players and downloaders** | VLC, MX Player, mpv, Just Player, Kodi, KMPlayer, XPlayer, nPlayer, Infuse, Outplayer; ADM, 1DM, FDM, system download manager. Installed apps are detected on Android. On the web an `.m3u` playlist is generated. |
+| **Discovery** | Home slider, continue watching, my list, top rated, genre rails, multi-filter (genre, decade, country, IMDb, quality), sorting, search and similar titles. |
+| **Library** | My list, continue watching and full history, stored on the device. |
+| **Personal** | System/light/dark theme, five accent colors, poster size, Persian or Latin digits, reduced motion, choose which home sections you see, default quality and player. |
+| **Notifications** | Opt in to a local alert when new movies or series appear. No push server involved. |
+| **Installable web app** | A PWA with offline shell. On iPhone and iPad a step-by-step *Add to Home Screen* guide appears; on Chrome and Edge the native install prompt is used. |
+| **Updates from GitHub Releases** | Android and the desktop apps check [Releases](https://github.com/TssHack/vispar/releases), show the notes, and download the right installer for your platform. JS-only changes can ship over the air. |
+
+## Screenshots
+
+### Phone
+
+<p align="center">
+  <img src="docs/screenshots/splash.jpg" width="19%" alt="Splash">
+  <img src="docs/screenshots/home-phone.jpg" width="19%" alt="Home">
+  <img src="docs/screenshots/catalog-phone.jpg" width="19%" alt="Catalog">
+  <img src="docs/screenshots/detail-phone.jpg" width="19%" alt="Details">
+  <img src="docs/screenshots/settings-phone.jpg" width="19%" alt="Settings">
+</p>
+
+### Splash states
+
+<p align="center">
+  <img src="docs/screenshots/splash.jpg" width="30%" alt="Checking connection">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/splash-offline.jpg" width="30%" alt="Offline">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/ios-install.jpg" width="30%" alt="iOS install guide">
+</p>
+
+### Desktop and web
+
+<p align="center">
+  <img src="docs/screenshots/home-desktop.jpg" width="100%" alt="Desktop home">
+</p>
+<p align="center">
+  <img src="docs/screenshots/catalog-desktop.jpg" width="49%" alt="Desktop catalog">
+  <img src="docs/screenshots/detail-desktop.jpg" width="49%" alt="Desktop details">
+</p>
+<p align="center">
+  <img src="docs/screenshots/footer-desktop.jpg" width="100%" alt="Web footer">
+</p>
+
+### Android TV
+
+<p align="center">
+  <img src="docs/screenshots/tv-home.jpg" width="100%" alt="Android TV home with side rail">
+</p>
+
+Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?ios=1`, and the splash states with `?splash=hold` or `?splash=offline`.
+
+## Platforms
+
+| Platform | How you get it |
+| --- | --- |
+| Android | APK from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
+| Android TV | Same project built with the `react-native-tvos` fork (`npm run prebuild:tv`) |
+| iOS | Open the web app in Safari and follow the in-app *Add to Home Screen* guide, or build with Xcode / EAS |
+| Web / PWA | `npm run build:web` and host the `dist/` folder |
+| Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
+| macOS | `Vispar-*-mac-*.dmg` |
+| Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
+
+The desktop builds are produced by the **Desktop builds** workflow (`.github/workflows/desktop.yml`). Push a `v*` tag and the installers are attached to the release automatically.
+
+> macOS and Windows builds are not code-signed yet, so the OS will show a warning on first launch.
+
+## TV and remote control
+
+- Every control has a visible focus state (ring, glow and a slight lift on posters).
+- A labelled side rail replaces the tab bar and remembers where you are.
+- In the player the controls auto-hide. With them hidden: **← / →** seek, **OK** play or pause, **↑ / ↓** bring the controls back. Play/Pause, Rewind and Fast-forward media keys work, and **Back** closes a menu first, then the controls, then the player.
+- Content is kept inside a TV-safe margin and sized for 10-foot viewing.
+
+## Getting started
 
 ```bash
+git clone https://github.com/TssHack/vispar.git
+cd vispar
 npm install
-cp .env.example .env        # آدرس API یا پراکسی
-npm run web                 # وب
-npm run android             # اندروید (نیاز به development build دارد)
+cp .env.example .env     # set EXPO_PUBLIC_API_BASE
+npm run web              # or: npm run android
 ```
 
-پیش‌نمایش ظاهر تلویزیون در مرورگر: `http://localhost:8081/?tv=1`
+| Command | What it does |
+| --- | --- |
+| `npm run web` / `android` / `ios` | Start the dev server |
+| `npm run start:tv` | Dev server in TV mode |
+| `npm run typecheck` | TypeScript, strict |
+| `npm test` | Unit tests (Vitest) |
+| `npm run build:web` | Export the web app with PWA tags into `dist/` |
+| `npm run brand:icons` / `brand:pwa` | Regenerate app and PWA icons from the logo |
 
-## دسترسی به API
+### Backend
 
-اپ فقط یک آدرس پایه‌ی API لازم دارد. سرور و پراکسی بک‌اند در این مخزن نیست و خصوصی می‌ماند.
+The app talks to a catalog API through a single base URL. The proxy that keeps the API key on a server and adds CORS is **not part of this repository**. Point `EXPO_PUBLIC_API_BASE` at your own proxy. Direct mode (`EXPO_PUBLIC_API_KEY`) works on native builds, but it embeds the key in the app, so avoid it for public releases.
 
-```bash
-cp .env.example .env
-# EXPO_PUBLIC_API_BASE=https://your-api.example.com
-```
-
-- **وب و PWA:** API اصلی هدر CORS ندارد و کلید را داخل آدرس می‌گیرد، پس نسخه‌ی وب باید از یک پراکسی خودتان استفاده کند که کلید را سمت سرور نگه دارد و CORS بدهد.
-- **موبایل و دسکتاپ:** می‌توانند مستقیم هم کار کنند (`EXPO_PUBLIC_API_BASE` و `EXPO_PUBLIC_API_KEY`)، ولی کلید داخل بسته قرار می‌گیرد. برای انتشار عمومی از پراکسی استفاده کنید.
-
-اپ فقط این مسیرهای فقط‌خواندنی را صدا می‌زند: `movie/by/filtres/0/created/{page}`، `serie/by/filtres/0/created/{page}`، `season/by/serie/{id}` و `search/{query}`.
-
-## اسپلش و بررسی اتصال
-
-هنگام اجرا، اسپلش اتصال را در دو مرحله می‌سنجد: اول اینترنت، بعد در دسترس بودن API. اگر اینترنت قطع باشد یا سرور جواب ندهد، صفحه‌ی خطا با «تلاش دوباره» و «ادامه بدون اتصال» (کتابخانه و تاریخچه) نشان داده می‌شود. بعد از ورود هم قطع شدن اتصال با یک نوار هشدار اطلاع داده می‌شود و با برگشتن اینترنت خودکار برطرف می‌شود.
-
-## PWA و اعلان‌ها
-
-- نسخه‌ی وب نصب‌پذیر است (manifest، service worker و کش آفلاین برای پوسته‌ی برنامه).
-- روی **iPhone و iPad** (Safari) یک راهنمای مرحله‌به‌مرحله‌ی «افزودن به صفحه‌ی اصلی» نشان داده می‌شود؛ پیش‌نمایش: `?ios=1`. روی Chrome و Edge دکمه‌ی نصب بومی مرورگر.
-- **اعلان فیلم و سریال جدید:** از تنظیمات روشن می‌شود. اپ هنگام اجرا و برگشت به پیش‌زمینه تازه‌ها را بررسی و محلی اعلان می‌دهد (بدون سرور پوش).
-
-## نسخه‌ی دسکتاپ (ویندوز، مک، لینوکس)
-
-پوشه‌ی `desktop/` اپ وب را در Electron می‌پیچد (nsis و portable برای ویندوز، dmg و zip برای مک، AppImage و deb برای لینوکس). ساخت از طریق GitHub Actions (`Desktop builds`) انجام می‌شود؛ با پوش کردن تگ `v*` فایل‌ها به Release اضافه می‌شوند. ساخت محلی:
+### Desktop
 
 ```bash
 npm run build:web
 cd desktop && npm install && npx electron-builder
 ```
 
-برای آدرس API در ساخت دسکتاپ، سکرت‌های `EXPO_PUBLIC_API_BASE` و `EXPO_PUBLIC_API_KEY` را در تنظیمات مخزن بگذارید.
+The Electron shell serves the exported web app from a private `app://` origin, opens external links in your browser, and supports `F11` for full screen.
 
-## انتشار نسخه‌ی جدید
+### Releases and updates
 
-1. `version` را در `app.json` بالا ببرید (مثلاً `2.1.0`).
-2. APK بسازید: `npx eas-cli build -p android --profile production`
-3. در گیت‌هاب یک Release با تگ `v2.1.0` بسازید و فایل `.apk` را پیوست کنید. توضیحات Release همان «تغییرات این نسخه» است که در اپ نمایش داده می‌شود.
+1. Bump `version` in `app.json` and `desktop/package.json`.
+2. Push a tag such as `v2.1.0`. CI builds Windows, macOS and Linux installers and attaches them.
+3. Add an APK (`npx eas-cli build -p android --profile production`) and write the notes in the release body. That text is what users see in the update sheet.
 
-اپ‌های نصب‌شده در اجرای بعدی (حداکثر هر ۱۲ ساعت یک‌بار) یا با دکمه‌ی «بررسی به‌روزرسانی» در تنظیمات نسخه‌ی جدید را می‌بینند.
+Installed apps check at most every 12 hours, or on demand from **Settings → Check for updates**.
 
-برای تغییرات فقط JS، به‌جای APK می‌توانید OTA بفرستید: یک‌بار `npx eas-cli init` و `npx eas-cli update:configure`، بعد `npx eas-cli update --channel production`.
-
-## Android TV
-
-ساخت نسخه‌ی تلویزیون از همین پروژه:
-
-```bash
-npm run prebuild:tv          # EXPO_TV=1 expo prebuild --clean
-npx expo run:android         # روی امولاتور Android TV
-# یا با EAS:
-npx eas-cli build -p android --profile production_tv
-```
-
-Expo نسخه‌ی تلویزیون را با فورک [`react-native-tvos`](https://github.com/react-native-tvos/react-native-tvos) می‌سازد. این پروژه روی Expo SDK 58 (React Native 0.88) است و هنگام نوشتن این متن، نسخه‌ی پایدار 0.88 آن هنوز منتشر نشده بود (فقط RC). وقتی منتشر شد:
-
-```json
-"react-native": "npm:react-native-tvos@0.88-stable"
-```
-
-کدهای رابط تلویزیون (منوی کناری، فوکوس، بنر) آماده‌اند و با همان فورک کار می‌کنند.
-
-## ساختار
+## Project structure
 
 ```
-src/app/          صفحه‌ها (expo-router)
-src/api/          کلاینت، پارسرها، هوک‌های react-query
-src/components/   کامپوننت‌ها
-src/theme/        توکن‌ها، فونت، ThemeProvider
-src/update/       سیستم به‌روزرسانی
-src/player/       کنترل‌های پلیر
-src/external/     پلیرها و دانلودرهای خارجی
-src/filters/      فیلتر و مرتب‌سازی
-src/library/      لیست من، ادامه‌ی تماشا، تاریخچه
-src/settings/     تنظیمات کاربر
-plugins/          پلاگین اندروید برای شناسایی برنامه‌های نصب‌شده
-desktop/          پوسته‌ی Electron (ویندوز، مک، لینوکس)
-public/           manifest و service worker (PWA)
-src/net/          بررسی اتصال
-src/pwa/          نصب PWA و راهنمای iOS
-src/notifications/ اعلان‌ها
-assets/brand/     لوگو (SVG)، بنر تلویزیون، لاک‌آپ
-scripts/          ساخت آیکن‌ها و برش وزن‌های فونت
-tests/            تست‌ها (vitest)
+src/app/            screens (expo-router)
+src/api/            client, tolerant parsers, react-query hooks
+src/components/     UI building blocks, splash, footer, focus handling
+src/net/            connection probe (internet, then API)
+src/pwa/            install flow and the iOS guide
+src/notifications/  local notifications and the new-content watcher
+src/update/         GitHub release check, platform asset picking, OTA
+src/player/         seek bar and playback context
+src/external/       external players and downloaders
+src/filters/        filtering and sorting
+src/library/        my list, continue watching, history
+src/settings/       persisted preferences
+src/theme/          tokens, fonts, theme provider
+desktop/            Electron shell for Windows, macOS, Linux
+public/             web manifest and service worker
+plugins/            Expo config plugin (installed-app detection on Android)
+tests/              Vitest suites
 ```
 
-## دستورها
+## Tech
 
-| دستور | کار |
-| --- | --- |
-| `npm run typecheck` | بررسی تایپ |
-| `npm test` | تست‌های اپ |
-| `npm run build:web` | خروجی وب (با تگ‌های PWA) در `dist/` |
-| `npm run brand:pwa` | ساخت آیکن‌های PWA |
-| `npm run brand:icons` | ساخت دوباره‌ی آیکن‌ها از SVG لوگو |
-| `python3 scripts/build-fonts.py` | ساخت وزن‌های ثابت از `Arad-VF.ttf` |
+Expo SDK 58 · React Native 0.88 · expo-router · TanStack Query · expo-video · react-native-svg · Electron · Vitest · TypeScript (strict). Typeface: Arad under the SIL OFL 1.1.
 
-## فونت
+## Credits
 
-فونت عراد تحت مجوز SIL Open Font License 1.1 است. فایل متغیر اصلی در `assets/fonts/Arad-VF.ttf` است و وزن‌های ثابت (۴۰۰ تا ۸۰۰) از روی آن ساخته شده‌اند، چون اندروید وزن را از فونت متغیر انتخاب نمی‌کند.
+Designed and developed by **[Ehsan Fazli](https://ehsanjs.ir)**.

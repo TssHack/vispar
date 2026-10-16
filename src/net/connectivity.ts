@@ -11,17 +11,17 @@ import { buildUrl, fetchJson } from '@/api/client';
  */
 export type NetStatus = 'checking' | 'online' | 'offline' | 'server';
 
-type State = { status: NetStatus; checkedAt: number };
+/** Which step of the probe is running (shown on the splash). */
+export type NetPhase = 'internet' | 'server' | 'done';
 
-let state: State = { status: 'checking', checkedAt: 0 };
+type State = { status: NetStatus; checkedAt: number; phase: NetPhase };
+
+let state: State = { status: 'checking', checkedAt: 0, phase: 'internet' };
 const listeners = new Set<() => void>();
-const set = (status: NetStatus) => {
-  if (state.status === status && status !== 'checking') {
-    state = { status, checkedAt: Date.now() };
-    return;
-  }
-  state = { status, checkedAt: Date.now() };
-  listeners.forEach((l) => l());
+const set = (status: NetStatus, phase: NetPhase = 'done') => {
+  const same = state.status === status && state.phase === phase;
+  state = { status, checkedAt: Date.now(), phase };
+  if (!same || status === 'checking') listeners.forEach((l) => l());
 };
 
 /** Small, CORS-free endpoints that answer with an empty body. Any one answering means we are online. */
@@ -60,10 +60,11 @@ let inflight: Promise<NetStatus> | null = null;
 /** Runs the two-step probe (internet, then API). Concurrent calls share one run. */
 export function checkConnection(): Promise<NetStatus> {
   if (inflight) return inflight;
-  if (state.status !== 'online') set('checking');
+  if (state.status !== 'online') set('checking', 'internet');
   inflight = (async () => {
     const net = await hasInternet();
     if (!net) return 'offline' as const;
+    if (state.status === 'checking') set('checking', 'server');
     return (await apiReachable()) ? ('online' as const) : ('server' as const);
   })()
     .then((s) => {
@@ -103,5 +104,6 @@ export const subscribeNet = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
+export const usePhase = (): NetPhase => useSyncExternalStore(subscribeNet, () => state.phase, () => state.phase);
 export const useNetStatus = (): NetStatus =>
   useSyncExternalStore(subscribeNet, () => state.status, () => state.status);

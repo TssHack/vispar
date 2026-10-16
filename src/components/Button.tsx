@@ -60,7 +60,8 @@ export function Button({
         {
           height,
           minWidth: height,
-          paddingHorizontal: iconOnly ? 0 : 22,
+          paddingHorizontal: iconOnly ? 0 : 18,
+          overflow: 'hidden',
           borderRadius: radius.button,
           backgroundColor: v.bg,
           borderWidth: v.border ? 1 : 0,
@@ -77,10 +78,10 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={v.fg} />
       ) : (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1, maxWidth: '100%' }}>
           {icon ? <Icon name={icon} size={icon === 'play' ? 16 : 20} color={v.fg} /> : null}
           {label ? (
-            <Text size={size === 'lg' ? 16 : 15} weight={800} color={v.fg} line={1.3}>
+            <Text size={size === 'lg' ? 16 : 15} weight={800} color={v.fg} line={1.3} numberOfLines={1} style={{ flexShrink: 1 }}>
               {label}
             </Text>
           ) : null}

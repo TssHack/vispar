@@ -1,104 +1,197 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Platform, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 
-import type { NetStatus } from '@/net/connectivity';
+import { usePhase, type NetStatus } from '@/net/connectivity';
 import { useSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { LogoMark } from './Logo';
 import { Text } from './Text';
 
 const native = Platform.OS !== 'web';
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const V_LENGTH = 106;
 
-const COPY: Record<Exclude<NetStatus, 'online'>, { title: string; body: string }> = {
-  checking: { title: 'ویسپار', body: 'در حال بررسی اتصال…' },
-  offline: { title: 'اینترنت وصل نیست', body: 'اتصال دستگاهتان را بررسی کنید. تا وصل شدن، خودکار دوباره تلاش می‌کنیم.' },
-  server: { title: 'سرور در دسترس نیست', body: 'اینترنت وصل است اما به سرور محتوا نرسیدیم. کمی بعد دوباره امتحان کنید.' },
+const ERR: Record<'offline' | 'server', { title: string; body: string; tips: string[] }> = {
+  offline: {
+    title: 'اینترنت وصل نیست',
+    body: 'اتصال دستگاهتان را بررسی کنید. تا وصل شدن، خودکار دوباره تلاش می‌کنیم.',
+    tips: ['Wi‑Fi یا داده‌ی همراه را روشن کنید', 'اگر VPN دارید، قطع و وصلش کنید'],
+  },
+  server: {
+    title: 'سرور در دسترس نیست',
+    body: 'اینترنت وصل است اما به سرور محتوا نرسیدیم. کمی بعد دوباره امتحان کنید.',
+    tips: ['چند ثانیه صبر و دوباره تلاش کنید', 'کتابخانه‌ی شما بدون اینترنت هم باز می‌شود'],
+  },
 };
 
+/** Soft amber glow painted with an SVG radial gradient (no blur filter needed, so it is cheap on TV). */
+function Glow({ size, color, opacity }: { size: number; color: string; opacity: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100" pointerEvents="none">
+      <Defs>
+        <RadialGradient id="glow" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
+          <Stop offset="0" stopColor={color} stopOpacity={opacity} />
+          <Stop offset="1" stopColor={color} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Circle cx="50" cy="50" r="50" fill="url(#glow)" />
+    </Svg>
+  );
+}
+
+function StepRow({ label, state }: { label: string; state: 'wait' | 'run' | 'done' }) {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: state === 'wait' ? 0.4 : 1 }}>
+      <View style={{ width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: state === 'done' ? colors.accent : 'transparent', borderWidth: state === 'done' ? 0 : 2, borderColor: state === 'run' ? colors.accent : colors.lineStrong }}>
+        {state === 'done' ? <Icon name="check" size={12} color={colors.onAccent} strokeWidth={3} /> : null}
+      </View>
+      <Text size={13} weight={state === 'run' ? 700 : 500} color={state === 'wait' ? 'muted' : 'text2'}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 /**
- * Splash with the connection test. It shows the animated mark while probing and turns into an
- * offline / server-down page with Retry and "continue offline" (library and history still work).
+ * Splash with the connection test: the V strokes itself in, the play mark pops, the name rises
+ * and two steps (internet, server) tick off. On failure it becomes an offline / server-down
+ * page with Retry and "continue offline" (library and history still work).
  */
 export function BootScreen({ status, onRetry, onContinue }: { status: Exclude<NetStatus, 'online'>; onRetry: () => void; onContinue: () => void }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const reduce = useSetting('reduceMotion');
-  const pulse = useRef(new Animated.Value(0)).current;
-  const enter = useRef(new Animated.Value(0)).current;
+  const phase = usePhase();
   const failed = status !== 'checking';
-  const copy = COPY[status];
 
-  useEffect(() => {
-    Animated.timing(enter, { toValue: 1, duration: reduce ? 0 : 700, easing: Easing.out(Easing.cubic), useNativeDriver: native }).start();
-  }, [enter, reduce]);
+  const draw = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  const pop = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  const rise = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  const drift = useRef(new Animated.Value(0)).current;
+  const sweep = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (reduce) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 1400, easing: Easing.inOut(Easing.quad), useNativeDriver: native }),
-        Animated.timing(pulse, { toValue: 0, duration: 1400, easing: Easing.inOut(Easing.quad), useNativeDriver: native }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [pulse, reduce]);
+    Animated.sequence([
+      Animated.timing(draw, { toValue: 1, duration: 650, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+      Animated.spring(pop, { toValue: 1, friction: 5, tension: 120, useNativeDriver: native }),
+      Animated.timing(rise, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: native }),
+    ]).start();
+    const loops = [
+      Animated.loop(Animated.sequence([Animated.timing(drift, { toValue: 1, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: native }), Animated.timing(drift, { toValue: 0, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: native })])),
+      Animated.loop(Animated.timing(sweep, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.quad), useNativeDriver: native })),
+    ];
+    loops.forEach((l) => l.start());
+    return () => loops.forEach((l) => l.stop());
+  }, [draw, pop, rise, drift, sweep, reduce]);
 
-  const glowScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.25] });
-  const glowOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0.12] });
-  const markScale = enter.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] });
+  const dash = draw.interpolate({ inputRange: [0, 1], outputRange: [V_LENGTH, 0] });
+  const gx = drift.interpolate({ inputRange: [0, 1], outputRange: [-40, 40] });
+  const gy = drift.interpolate({ inputRange: [0, 1], outputRange: [20, -20] });
+  const tint = failed ? colors.danger : '#F2B544';
+  const risen = { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] };
+  const err = failed ? ERR[status as 'offline' | 'server'] : null;
+
+  const stepState = (step: 'internet' | 'server'): 'wait' | 'run' | 'done' => {
+    if (step === 'internet') return phase === 'internet' ? 'run' : 'done';
+    return phase === 'internet' ? 'wait' : phase === 'server' ? 'run' : 'done';
+  };
 
   return (
     <View
       accessibilityLiveRegion="polite"
-      style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: insets.top, paddingBottom: insets.bottom }}
+      style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: insets.top, paddingBottom: insets.bottom, overflow: 'hidden' }}
     >
-      <View style={{ width: 200, height: 200, alignItems: 'center', justifyContent: 'center' }}>
-        <Animated.View
-          style={{
-            position: 'absolute',
-            width: 180,
-            height: 180,
-            borderRadius: 90,
-            backgroundColor: failed ? colors.danger : colors.accent,
-            opacity: glowOpacity,
-            transform: [{ scale: glowScale }],
-          }}
-        />
-        <Animated.View style={{ opacity: enter, transform: [{ scale: markScale }] }}>
-          {failed ? <Icon name="wifiOff" size={84} color="danger" strokeWidth={1.6} /> : <LogoMark size={104} onDark />}
-        </Animated.View>
+      {/* Ambient light */}
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', transform: [{ translateX: gx }, { translateY: gy }] }]}>
+        <View style={{ position: 'absolute', top: '8%', right: '-18%' }}>
+          <Glow size={560} color={tint} opacity={0.22} />
+        </View>
+        <View style={{ position: 'absolute', bottom: '-12%', left: '-22%' }}>
+          <Glow size={520} color={failed ? '#FF6B6B' : '#DB8520'} opacity={0.16} />
+        </View>
+        <Glow size={380} color={tint} opacity={0.2} />
+      </Animated.View>
+
+      {/* Mark */}
+      <View style={{ width: 150, height: 150, alignItems: 'center', justifyContent: 'center' }}>
+        {failed ? (
+          <Animated.View style={{ opacity: rise }}>
+            <Icon name="wifiOff" size={96} color="danger" strokeWidth={1.5} />
+          </Animated.View>
+        ) : (
+          <>
+            <Svg width={150} height={150} viewBox="0 0 100 100" style={{ position: 'absolute' }}>
+              <Defs>
+                <RadialGradient id="vg" cx="50" cy="50" r="60" gradientUnits="userSpaceOnUse">
+                  <Stop offset="0" stopColor="#FFE0A0" />
+                  <Stop offset="0.55" stopColor="#F2B544" />
+                  <Stop offset="1" stopColor="#DB8520" />
+                </RadialGradient>
+              </Defs>
+              <AnimatedPath d="M24 27 L50 73 L76 27" fill="none" stroke="url(#vg)" strokeWidth={11} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={V_LENGTH} strokeDashoffset={dash} />
+            </Svg>
+            <Animated.View style={{ position: 'absolute', opacity: pop, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] }}>
+              <Svg width={150} height={150} viewBox="0 0 100 100">
+                <Path d="M43.5 31 L43.5 47 L57 39 Z" fill="#F7F3EA" stroke="#F7F3EA" strokeWidth={3.2} strokeLinejoin="round" />
+              </Svg>
+            </Animated.View>
+          </>
+        )}
       </View>
 
-      <Animated.View style={{ opacity: enter, alignItems: 'center', gap: 10, maxWidth: 420, marginTop: 8 }}>
-        <Text size={failed ? 22 : 30} weight={800} align="center" accessibilityRole="header">
-          {copy.title}
-        </Text>
-        <Text size={14} color="text2" align="center">
-          {copy.body}
-        </Text>
-        {failed ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 22 }}>
-            <Button label="تلاش دوباره" icon="refresh" size="lg" onPress={onRetry} hasTVPreferredFocus />
-            <Button label="ادامه بدون اتصال" variant="surface" size="lg" onPress={onContinue} />
-          </View>
+      <Animated.View style={[{ alignItems: 'center', gap: 8, maxWidth: 440, marginTop: 6 }, risen]}>
+        {failed && err ? (
+          <>
+            <Text size={24} weight={800} align="center" accessibilityRole="header">
+              {err.title}
+            </Text>
+            <Text size={14} color="text2" align="center">
+              {err.body}
+            </Text>
+            <View style={{ gap: 6, marginTop: 10, alignSelf: 'stretch', padding: 14, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
+              {err.tips.map((t) => (
+                <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Icon name="info" size={14} color="muted" />
+                  <Text size={12} color="text2" style={{ flex: 1 }}>
+                    {t}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 20 }}>
+              <Button label="تلاش دوباره" icon="refresh" size="lg" onPress={onRetry} hasTVPreferredFocus />
+              <Button label="ادامه بدون اتصال" variant="surface" size="lg" onPress={onContinue} />
+            </View>
+          </>
         ) : (
-          <View style={{ marginTop: 18, width: 140, height: 3, borderRadius: 2, backgroundColor: colors.line, overflow: 'hidden' }}>
-            <Animated.View
-              style={{
-                width: 56,
-                height: 3,
-                borderRadius: 2,
-                backgroundColor: colors.accent,
-                transform: [{ translateX: pulse.interpolate({ inputRange: [0, 1], outputRange: [-56, 140] }) }],
-              }}
-            />
-          </View>
+          <>
+            <Text size={44} weight={800} align="center" line={1.2} accessibilityRole="header">
+              ویسپار
+            </Text>
+            <Text size={14} color="text2" align="center">
+              فیلم و سریال، هر جا و هر دستگاه
+            </Text>
+            <View style={{ gap: 10, marginTop: 28 }}>
+              <StepRow label="بررسی اینترنت" state={stepState('internet')} />
+              <StepRow label="اتصال به سرور محتوا" state={stepState('server')} />
+            </View>
+            <View style={{ marginTop: 22, width: 160, height: 3, borderRadius: 2, backgroundColor: colors.line, overflow: 'hidden' }}>
+              <Animated.View style={{ width: 64, height: 3, borderRadius: 2, backgroundColor: colors.accent, transform: [{ translateX: sweep.interpolate({ inputRange: [0, 1], outputRange: [-64, 160] }) }] }} />
+            </View>
+          </>
         )}
+      </Animated.View>
+
+      <Animated.View style={[{ position: 'absolute', bottom: insets.bottom + 20 }, { opacity: rise }]}>
+        <Text size={11} color="muted" align="center">
+          ehsanjs.ir
+        </Text>
       </Animated.View>
     </View>
   );

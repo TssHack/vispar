@@ -9,7 +9,8 @@ import { api } from '@/api/client';
 import type { GithubRelease } from '@/api/types';
 import { repoUrl } from '@/config';
 
-import { findUpdate } from './version';
+import { releaseTarget } from './target';
+import { findUpdate, pickAsset } from './version';
 
 const LAST_CHECK = 'vispar.update.lastCheck';
 const SKIPPED = 'vispar.update.skipped';
@@ -19,6 +20,8 @@ export type CheckStatus = 'idle' | 'checking' | 'upToDate' | 'available' | 'erro
 
 type UpdateContextValue = {
   currentVersion: string;
+  /** This build can check GitHub releases and install from them (Android and desktop). */
+  supported: boolean;
   status: CheckStatus;
   /** Newer GitHub release (a new APK). */
   release: GithubRelease | null;
@@ -38,8 +41,9 @@ const Ctx = createContext<UpdateContextValue | null>(null);
 
 export const currentVersion = Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '0.0.0';
 
-/** The web build is always the latest deploy, and iOS can't install APKs; GitHub checks are Android-only. */
-const releaseChecksSupported = Platform.OS === 'android';
+const target = releaseTarget();
+/** Android and the desktop apps update from GitHub releases; the web build is always the latest deploy. */
+const releaseChecksSupported = target !== null;
 const otaSupported = Platform.OS !== 'web' && Updates.isEnabled && !__DEV__;
 
 export function UpdateProvider({ children }: { children: ReactNode }) {
@@ -114,13 +118,15 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
   }, [checkNow, checkOta]);
 
   const install = useCallback(() => {
-    const url = release?.apkUrl ?? release?.htmlUrl ?? `${repoUrl}/releases/latest`;
+    const asset = release && target ? pickAsset(release, target) : null;
+    const url = asset?.url ?? release?.htmlUrl ?? `${repoUrl}/releases/latest`;
     Linking.openURL(url).catch(() => {});
   }, [release]);
 
   const value = useMemo<UpdateContextValue>(
     () => ({
       currentVersion,
+      supported: releaseChecksSupported,
       status,
       release,
       otaReady,

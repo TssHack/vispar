@@ -33,6 +33,8 @@ export type Episode = {
 
 export type Season = { id: number; title: string; episodes: Episode[] };
 
+export type ReleaseAsset = { name: string; url: string; size: number };
+
 export type GithubRelease = {
   tagName: string;
   name: string;
@@ -41,6 +43,8 @@ export type GithubRelease = {
   publishedAt: string;
   prerelease: boolean;
   draft: boolean;
+  /** Every file attached to the release (installers for each platform). */
+  assets: ReleaseAsset[];
   /** Direct .apk download, when the release has one attached. */
   apkUrl: string | null;
   apkSize: number | null;

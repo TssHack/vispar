@@ -10,7 +10,9 @@ import { useLayout } from '@/hooks/useLayout';
 import { faNum, faVersion } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { releaseTarget, TARGET_LABEL } from './target';
 import { useUpdates } from './UpdateProvider';
+import { pickAsset } from './version';
 
 function formatSize(bytes: number | null) {
   if (!bytes) return '';
@@ -45,6 +47,8 @@ export function UpdateSheet() {
   const insets = useSafeAreaInsets();
   if (!release) return null;
   const notes = cleanNotes(release.body);
+  const target = releaseTarget();
+  const asset = target ? pickAsset(release, target) : null;
   const centered = isWide || isTV;
 
   return (
@@ -105,7 +109,7 @@ export function UpdateSheet() {
 
           <View style={{ gap: 10 }}>
             <Button
-              label={release.apkUrl ? `دانلود و نصب${release.apkSize ? ` · ${formatSize(release.apkSize)}` : ''}` : 'مشاهده در گیت‌هاب'}
+              label={asset ? `دانلود برای ${target ? TARGET_LABEL[target] : ''}${asset.size ? ` · ${formatSize(asset.size)}` : ''}` : 'مشاهده در گیت‌هاب'}
               icon="download"
               size="lg"
               onPress={install}

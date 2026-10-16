@@ -158,7 +158,7 @@ export default function Settings() {
       case 'error':
         return 'بررسی ناموفق بود. اینترنت را بررسی کنید.';
       default:
-        return Platform.OS === 'web' ? 'نسخه‌ی وب همیشه به‌روز است' : 'به‌روزرسانی خودکار بررسی می‌شود';
+        return Platform.OS === 'web' && !up.supported ? 'نسخه‌ی وب همیشه به‌روز است' : 'به‌روزرسانی خودکار بررسی می‌شود';
     }
   })();
 
@@ -376,7 +376,7 @@ export default function Settings() {
             </Text>
           </View>
         </View>
-        {native ? (
+        {native || up.supported ? (
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Button
               label={up.status === 'available' ? 'نصب نسخه‌ی جدید' : 'بررسی به‌روزرسانی'}

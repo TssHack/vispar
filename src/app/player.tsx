@@ -1,5 +1,5 @@
 import { useEvent, useEventListener } from 'expo';
-import { useKeepAwake } from 'expo-keep-awake';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -86,7 +86,17 @@ function MenuRow({ label, sub, selected, onPress }: { label: string; sub?: strin
 }
 
 export default function PlayerScreen() {
-  useKeepAwake();
+  // Keep the screen on while playing. On web the wake lock may not be active yet when we leave
+  // (and some browsers refuse it), so both calls swallow their errors instead of surfacing them.
+  useEffect(() => {
+    const tag = 'vispar-player';
+    activateKeepAwakeAsync(tag).catch(() => {});
+    return () => {
+      Promise.resolve()
+        .then(() => deactivateKeepAwake(tag))
+        .catch(() => {});
+    };
+  }, []);
   const params = useLocalSearchParams<{ url?: string; q?: string; title?: string; type?: string; id?: string; s?: string; e?: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();

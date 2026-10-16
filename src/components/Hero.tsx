@@ -47,7 +47,7 @@ function HeroSlide({ poster, preferredFocus }: { poster: Poster; preferredFocus?
             </Text>
           ) : null}
         </View>
-        {big && poster.description ? (
+        {big && /[\p{L}\p{N}]/u.test(poster.description) ? (
           <Text size={isTV ? 17 : 16} color={cinema.onImage2} line={1.8} numberOfLines={2}>
             {poster.description}
           </Text>

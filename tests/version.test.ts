@@ -11,6 +11,7 @@ const rel = (tagName: string, extra: Partial<GithubRelease> = {}): GithubRelease
   publishedAt: '',
   prerelease: false,
   draft: false,
+  assets: [],
   apkUrl: null,
   apkSize: null,
   ...extra,
@@ -35,5 +36,21 @@ describe('versions', () => {
     expect(findUpdate(list, '2.0.0')?.tagName).toBe('v2.1.0');
     expect(findUpdate(list, '2.1.0')).toBeNull();
     expect(findUpdate(list, '2.1.0', { includePrerelease: true })?.tagName).toBe('v2.2.0');
+  });
+});
+
+import { pickAsset } from '@/update/version';
+
+describe('pickAsset', () => {
+  const a = (name: string) => ({ name, url: `https://dl/${name}`, size: 1 });
+  const release = { assets: [a('Vispar-2.1.0-win-x64.exe'), a('Vispar-2.1.0-portable.exe'), a('Vispar-2.1.0-mac-arm64.dmg'), a('Vispar-2.1.0-linux-x86_64.AppImage'), a('vispar.apk')] };
+  it('picks the right installer per platform', () => {
+    expect(pickAsset(release, 'android')?.name).toBe('vispar.apk');
+    expect(pickAsset(release, 'windows')?.name).toBe('Vispar-2.1.0-win-x64.exe');
+    expect(pickAsset(release, 'mac')?.name).toMatch(/\.dmg$/);
+    expect(pickAsset(release, 'linux')?.name).toMatch(/AppImage$/);
+  });
+  it('returns null when nothing matches', () => {
+    expect(pickAsset({ assets: [] }, 'windows')).toBeNull();
   });
 });

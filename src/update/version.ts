@@ -1,4 +1,6 @@
-import type { GithubRelease } from '@/api/types';
+import type { GithubRelease, ReleaseAsset } from '@/api/types';
+
+export type ReleaseTarget = 'android' | 'windows' | 'mac' | 'linux';
 
 /** "v2.1.0", "2.1", "release-2.1.0-beta" → [2, 1, 0]. Returns null when no number is found. */
 export function parseVersion(input: string | null | undefined): number[] | null {
@@ -29,4 +31,20 @@ export function findUpdate(releases: GithubRelease[], current: string, opts: { i
   const latest = eligible[0];
   if (!latest) return null;
   return compareVersions(latest.tagName, current) > 0 ? latest : null;
+}
+
+/** Picks the installer for a platform out of a release's files (Windows prefers the setup over the portable build). */
+export function pickAsset(release: Pick<GithubRelease, 'assets'>, target: ReleaseTarget): ReleaseAsset | null {
+  const has = (a: ReleaseAsset, ...ext: string[]) => ext.some((e) => a.name.toLowerCase().endsWith(e));
+  const list = release.assets;
+  switch (target) {
+    case 'android':
+      return list.find((a) => has(a, '.apk')) ?? null;
+    case 'windows':
+      return list.find((a) => has(a, '.exe') && !/portable/i.test(a.name)) ?? list.find((a) => has(a, '.exe')) ?? null;
+    case 'mac':
+      return list.find((a) => has(a, '.dmg')) ?? list.find((a) => has(a, '.zip') && /mac|darwin/i.test(a.name)) ?? null;
+    case 'linux':
+      return list.find((a) => has(a, '.appimage')) ?? list.find((a) => has(a, '.deb')) ?? null;
+  }
 }
