@@ -16,14 +16,52 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 /** Serves files from the web build; unknown paths fall back to index.html (single-page app). */
 function registerProtocol() {
-  protocol.handle('app', (request) => {
-    const { pathname } = new URL(request.url);
+  protocol.handle('app', async (request) => {
+    const reqUrl = new URL(request.url);
+    const { pathname } = reqUrl;
+    if (pathname === '/_media') return relayMedia(request, reqUrl.searchParams.get('u'));
     const rel = decodeURIComponent(pathname).replace(/^\/+/, '');
     let file = path.normalize(path.join(WEB_ROOT, rel));
     if (!file.startsWith(WEB_ROOT)) return new Response('Forbidden', { status: 403 });
     if (!rel || !fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(WEB_ROOT, 'index.html');
     return net.fetch(pathToFileURL(file).toString());
   });
+}
+
+/**
+ * The media files are served over plain HTTP, which an app:// page may not load directly. This relays
+ * them (with Range support, so seeking works) from the user's own machine. Only http(s) URLs are
+ * accepted, and local/private addresses are refused so the relay cannot be pointed at the network.
+ */
+async function relayMedia(request, target) {
+  let url;
+  try {
+    url = new URL(target || '');
+  } catch {
+    return new Response('Bad request', { status: 400 });
+  }
+  if (!/^https?:$/.test(url.protocol)) return new Response('Bad request', { status: 400 });
+  if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1)/i.test(url.hostname)) return new Response('Forbidden', { status: 403 });
+  const headers = {};
+  const range = request.headers.get('range');
+  if (range) headers.Range = range;
+  try {
+    const upstream = await net.fetch(url.toString(), { headers, redirect: 'follow' });
+    const out = new Headers();
+    for (const h of ['content-length', 'content-range', 'accept-ranges', 'last-modified', 'etag']) {
+      const v = upstream.headers.get(h);
+      if (v) out.set(h, v);
+    }
+    let type = upstream.headers.get('content-type') || '';
+    // Chromium plays H.264/AAC inside Matroska when it is labelled as WebM.
+    if (/\.mkv(\?|$)/i.test(url.pathname) || /matroska/i.test(type)) type = 'video/webm';
+    else if (!type || /octet-stream/i.test(type)) type = /\.mp4(\?|$)/i.test(url.pathname) ? 'video/mp4' : type || 'video/mp4';
+    out.set('content-type', type);
+    if (!out.has('accept-ranges')) out.set('accept-ranges', 'bytes');
+    return new Response(upstream.body, { status: upstream.status, headers: out });
+  } catch {
+    return new Response('Upstream unreachable', { status: 502 });
+  }
 }
 
 /** The catalog API sends no CORS headers; allow it for the app's own origin only. */

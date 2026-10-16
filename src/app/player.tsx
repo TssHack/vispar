@@ -19,6 +19,7 @@ import { Text } from '@/components/Text';
 import { toast } from '@/components/Toast';
 import { download, playInternal } from '@/external/actions';
 import { copyLink } from '@/external/launch';
+import { isBlockedByBrowser, playableUrl } from '@/lib/media';
 import { openExternalSheet } from '@/external/sheet';
 import { useLayout } from '@/hooks/useLayout';
 import { useRemote } from '@/hooks/useRemote';
@@ -122,7 +123,7 @@ export default function PlayerScreen() {
   const title = ctx.poster?.title ?? params.title ?? '';
   const key = type ? progressKey(type, id, ctx.episode?.episodeId) : null;
 
-  const player = useVideoPlayer(fallbackSource ? { uri: fallbackSource.url, metadata: { title } } : null, (p) => {
+  const player = useVideoPlayer(fallbackSource && !isBlockedByBrowser(fallbackSource.url) ? { uri: playableUrl(fallbackSource.url), metadata: { title } } : null, (p) => {
     p.timeUpdateEventInterval = 0.5;
     p.play();
   });
@@ -131,10 +132,10 @@ export default function PlayerScreen() {
   const loadedUrl = useRef<string | null>(fallbackSource?.url ?? null);
   const pendingSeek = useRef<number | null>(null);
   useEffect(() => {
-    if (!current || loadedUrl.current === current.url) return;
+    if (!current || loadedUrl.current === current.url || isBlockedByBrowser(current.url)) return;
     loadedUrl.current = current.url;
     player
-      .replaceAsync({ uri: current.url, metadata: { title, artist: ctx.subtitle || undefined } })
+      .replaceAsync({ uri: playableUrl(current.url), metadata: { title, artist: ctx.subtitle || undefined } })
       .then(() => {
         if (pendingSeek.current !== null) {
           player.currentTime = pendingSeek.current;
@@ -366,6 +367,7 @@ export default function PlayerScreen() {
   const resolving = !current && type === 'serie' && sIdx !== undefined && !ctx.episode;
   if (!current && !sources.length && !resolving) return <NotFound title="لینک پخش نامعتبر است" body="دوباره از صفحه‌ی فیلم امتحان کنید." />;
 
+  const blocked = !!current && isBlockedByBrowser(current.url);
   const big = isTV || isWide;
   const side = Math.max(insets.left, insets.right, 16);
   const top = Math.max(insets.top, 12);
@@ -391,14 +393,14 @@ export default function PlayerScreen() {
         </View>
       ) : null}
 
-      {status === 'loading' || resolving ? (
+      {(status === 'loading' && !blocked) || resolving ? (
         <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : null}
 
       {/* Overlay controls */}
-      {visible && status !== 'error' && !ended ? (
+      {visible && status !== 'error' && !ended && !blocked ? (
         <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'space-between' }}>
           <LinearGradient pointerEvents="box-none" colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0)']} style={{ paddingTop: top, paddingHorizontal: side, paddingBottom: 36, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             {!isTV ? <CtrlButton icon="back" label="بستن پخش" onPress={goBack} size={44} iconSize={22} filled /> : null}
@@ -562,8 +564,27 @@ export default function PlayerScreen() {
         </View>
       ) : null}
 
+      {/* HTTPS page + plain-HTTP media: the browser refuses to load it, so explain and offer the way out */}
+      {blocked && current ? (
+        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: '#000' }}>
+          <Icon name="alert" size={36} color="#F4F1EA" />
+          <Text size={17} weight={800} color="#F4F1EA" align="center">
+            مرورگر اجازه‌ی پخش این فایل را نمی‌دهد
+          </Text>
+          <Text size={13} color="#C9C5D3" align="center" style={{ maxWidth: 520 }}>
+            فایل‌ها روی سرور بدون HTTPS هستند و مرورگر آن‌ها را در صفحه‌ی امن مسدود می‌کند. با پلیر دیگر مثل VLC پخش کنید، یا برنامه‌ی اندروید و دسکتاپ ویسپار را نصب کنید که همین فایل را مستقیم پخش می‌کنند.
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
+            <Button label="پخش با VLC و پلیرهای دیگر" icon="external" onPress={() => openExternalSheet({ kind: 'player', url: current.url, title })} />
+            <Button label="کپی لینک" icon="link" variant="onImage" onPress={() => copyLink(current.url)} />
+            {!isStreamOnly(current) ? <Button label="دانلود" icon="download" variant="onImage" onPress={() => download(current, title, { forceChooser: true })} /> : null}
+            <Button label="بازگشت" variant="onImage" onPress={goBack} />
+          </View>
+        </View>
+      ) : null}
+
       {/* Error */}
-      {status === 'error' ? (
+      {status === 'error' && !blocked ? (
         <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: 'rgba(0,0,0,0.88)' }}>
           <Icon name="alert" size={36} color="#F4F1EA" />
           <Text size={16} weight={800} color="#F4F1EA" align="center">

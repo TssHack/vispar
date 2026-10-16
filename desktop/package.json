@@ -1,6 +1,6 @@
 {
   "name": "vispar-desktop",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "private": true,
   "description": "Vispar desktop app (Windows, macOS, Linux)",
   "author": "Ehsan Fazli <https://ehsanfazli.ir>",
