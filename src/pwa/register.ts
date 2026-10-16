@@ -28,8 +28,9 @@ export function registerPwa() {
 
   // The service worker caches the shell; skip it in dev so hot reload keeps working.
   if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-    });
+    const register = () => void navigator.serviceWorker.register('/sw.js').catch(() => {});
+    // The route bundle loads lazily, so the window `load` event has usually fired already.
+    if (document.readyState === 'complete') register();
+    else window.addEventListener('load', register);
   }
 }
