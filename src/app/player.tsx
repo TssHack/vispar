@@ -6,7 +6,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ContentType, Source } from '@/api/types';
@@ -21,6 +21,7 @@ import { download, playInternal } from '@/external/actions';
 import { copyLink } from '@/external/launch';
 import { openExternalSheet } from '@/external/sheet';
 import { useLayout } from '@/hooks/useLayout';
+import { useRemote } from '@/hooks/useRemote';
 import { canResume, getProgress, progressKey, saveProgress, snapshot } from '@/library/store';
 import { faClock, faNum, isStreamOnly, qualityLabel } from '@/lib/format';
 import { pickSource, sortSources } from '@/lib/sources';
@@ -146,14 +147,14 @@ export default function PlayerScreen() {
   const poke = useCallback(() => {
     setVisible(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setVisible(false), 3500);
-  }, []);
+    hideTimer.current = setTimeout(() => setVisible(false), isTV ? 5500 : 3500);
+  }, [isTV]);
   useEffect(() => {
-    if (!isPlaying || menu || scrubbing || isTV) {
+    if (!isPlaying || menu || scrubbing) {
       setVisible(true);
       if (hideTimer.current) clearTimeout(hideTimer.current);
     } else poke();
-  }, [isPlaying, menu, scrubbing, isTV, poke]);
+  }, [isPlaying, menu, scrubbing, poke]);
 
   // ---------- actions ----------
   const toggle = useCallback(() => (player.playing ? player.pause() : player.play()), [player]);
@@ -289,6 +290,42 @@ export default function PlayerScreen() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }); // re-bind each render so handlers see current state
+
+  // ---------- remote control (Android TV) ----------
+  // With the controls hidden the D-pad drives playback directly; with them shown it moves focus
+  // and every key press just keeps them on screen.
+  useRemote((k) => {
+    if (!isTV) return;
+    if (k === 'playPause') toggle();
+    else if (k === 'play') player.play();
+    else if (k === 'pause') player.pause();
+    else if (k === 'rewind') seekBy(-skip * 2);
+    else if (k === 'fastForward') seekBy(skip * 2);
+    else if (!visible && !menu && !ended) {
+      if (k === 'left') seekBy(-skip);
+      else if (k === 'right') seekBy(skip);
+      else if (k === 'select') toggle();
+      else if (k === 'up' || k === 'down' || k === 'menu') {
+        /* fall through to show controls */
+      } else return;
+    }
+    poke();
+  });
+  useEffect(() => {
+    if (!isTV) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (menu) {
+        setMenu(null);
+        return true;
+      }
+      if (visible && isPlaying && !ended) {
+        setVisible(false);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [isTV, menu, visible, isPlaying, ended]);
 
   // ---------- double-tap to seek (touch) ----------
   const lastTap = useRef<{ t: number; side: 'l' | 'r' } | null>(null);

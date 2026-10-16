@@ -162,7 +162,7 @@ export function SideRail() {
   return (
     <View
       accessibilityRole="tablist"
-      style={{ width: 96, paddingVertical: 32, alignItems: 'center', gap: 14, backgroundColor: colors.bg, borderStartWidth: 1, borderColor: colors.line }}
+      style={{ width: 112, paddingVertical: 28, alignItems: 'center', gap: 10, backgroundColor: colors.bg, borderStartWidth: 1, borderColor: colors.line }}
     >
       <View style={{ marginBottom: 18 }}>
         <LogoMark size={44} onDark />
@@ -177,16 +177,21 @@ export function SideRail() {
             accessibilityState={{ selected: active }}
             accessibilityLabel={item.label}
             ringRadius={16}
+            hasTVPreferredFocus={active}
             style={{
-              width: 56,
-              height: 56,
+              width: 88,
+              height: 68,
               borderRadius: 16,
               alignItems: 'center',
               justifyContent: 'center',
+              gap: 4,
               backgroundColor: active ? colors.accentSoft : 'transparent',
             }}
           >
             <Icon name={item.icon} size={26} color={active ? colors.accent : colors.text2} />
+            <Text size={12} weight={active ? 800 : 600} color={active ? 'accentText' : 'text2'} line={1.3}>
+              {item.label}
+            </Text>
           </Focusable>
         );
       })}

@@ -50,7 +50,7 @@ export function Focusable({
         style,
         Platform.OS === 'web' ? ({ cursor: 'pointer', outlineStyle: 'none' } as unknown as ViewStyle) : null,
         pressed ? { opacity: 0.8 } : null,
-        focused && grow ? { transform: [{ scale: 1.06 }] } : null,
+        focused && grow ? ({ transform: [{ scale: 1.06 }], zIndex: 2, elevation: 8, shadowColor: colors.accent, shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 6 } } as ViewStyle) : null,
         focused ? focusStyle : null,
       ]}
     >
