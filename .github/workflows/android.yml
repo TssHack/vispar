@@ -1,0 +1,67 @@
+name: Android builds
+
+# Builds a phone/tablet APK and an Android TV APK on GitHub's runners (no EAS account needed).
+# Run it by hand (optionally naming a release tag to attach the files to), or push a v* tag.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to attach the APKs to (leave empty to only keep them as artifacts)
+        required: false
+        type: string
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [mobile, tv]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPO_TV: ${{ matrix.variant == 'tv' && '1' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci
+      - name: Use the Android TV fork of React Native
+        if: matrix.variant == 'tv'
+        run: npm install react-native@npm:react-native-tvos@0.88.0-0rc2 --no-save --legacy-peer-deps
+      - name: Generate the native project
+        run: npx expo prebuild --platform android --clean
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+        env:
+          EXPO_PUBLIC_API_BASE: ${{ secrets.EXPO_PUBLIC_API_BASE }}
+      - name: Name the file
+        id: name
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          SUFFIX=${{ matrix.variant == 'tv' && 'android-tv' || 'android' }}
+          mkdir -p out
+          cp android/app/build/outputs/apk/release/app-release.apk "out/Vispar-${VERSION}-${SUFFIX}.apk"
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vispar-${{ matrix.variant }}-apk
+          path: out/*.apk
+          if-no-files-found: error
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          files: out/*.apk
