@@ -59,7 +59,7 @@
   "private": true,
   "description": "Vispar — cross-platform movie & series app (Android, iOS, Web, Android TV)",
   "author": "Ehsan Fazli (https://ehsanfazli.ir)",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/tsshack/vispar"
