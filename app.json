@@ -3,7 +3,7 @@
     "name": "ویسپار",
     "slug": "vispar",
     "scheme": "vispar",
-    "version": "2.1.1",
+    "version": "2.1.2",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -34,7 +34,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "versionCode": 20101
+      "versionCode": 20102
     },
     "web": {
       "bundler": "metro",

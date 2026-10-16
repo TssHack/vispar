@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 
-import { buildUrl, fetchJson } from '@/api/client';
+import { config } from '@/config';
 
 /**
  * - checking: probe in flight
@@ -46,12 +46,21 @@ export async function hasInternet(ms = 4500): Promise<boolean> {
   return results.some(Boolean);
 }
 
+/**
+ * Is the content server answering? Asks its tiny `/health` endpoint instead of downloading a
+ * catalog page: any HTTP answer below 500 proves the server is up (a proxy without `/health`
+ * simply says 404), so a slow link or a big upstream response cannot make the splash fail.
+ */
 async function apiReachable(): Promise<boolean> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15_000);
   try {
-    await fetchJson(buildUrl(['movie', 'by', 'filtres', 0, 'created', 0]), { timeoutMs: 9000 });
-    return true;
+    const res = await fetch(`${config.apiBase}/health`, { headers: { Accept: 'application/json' }, signal: ctrl.signal, cache: 'no-store' });
+    return res.status < 500;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
