@@ -71,12 +71,13 @@ function HeroSlide({ poster, preferredFocus }: { poster: Poster; preferredFocus?
 /** Featured slider: auto-advances (unless reduced motion), swipeable, with dots. */
 export function HeroCarousel({ items, loading, preferredFocus }: { items: Poster[]; loading?: boolean; preferredFocus?: boolean }) {
   const { colors } = useTheme();
-  const { isWide, isTV, gutter, width } = useLayout();
+  const { isWide, isTV, gutter, width, height: winH } = useLayout();
   const reduceMotion = useSetting('reduceMotion');
+  const heroAuto = useSetting('heroAuto');
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const fade = useRef(new Animated.Value(1)).current;
-  const height = isTV ? 470 : isWide ? Math.min(620, Math.max(460, width * 0.38)) : width >= 600 ? 440 : 400;
+  const height = isTV ? 470 : isWide ? Math.min(620, Math.max(460, width * 0.38)) : Math.min(width >= 600 ? 440 : 400, Math.max(300, Math.round(winH * 0.82)));
   const count = items.length;
   const indexRef = useRef(index);
   indexRef.current = index;
@@ -97,10 +98,10 @@ export function HeroCarousel({ items, loading, preferredFocus }: { items: Poster
   goRef.current = go;
 
   useEffect(() => {
-    if (count < 2 || paused || reduceMotion || isTV) return;
+    if (count < 2 || paused || reduceMotion || isTV || !heroAuto) return;
     const t = setInterval(() => goRef.current(indexRef.current + 1), 7000);
     return () => clearInterval(t);
-  }, [count, paused, reduceMotion, isTV]);
+  }, [count, paused, reduceMotion, isTV, heroAuto]);
 
   const swipe = useRef(
     PanResponder.create({

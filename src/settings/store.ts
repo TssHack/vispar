@@ -4,6 +4,7 @@ export type AccentName = 'amber' | 'coral' | 'teal' | 'violet' | 'rose';
 export type Density = 'compact' | 'normal' | 'large';
 export type QualityPref = 'best' | '2160' | '1080' | '720' | '480';
 export type DigitStyle = 'fa' | 'en';
+export type VideoFit = 'contain' | 'cover' | 'fill';
 
 /** 'internal' = Vispar's player, 'ask' = show the chooser every time, otherwise an external app id. */
 export type PlayerMode = 'internal' | 'ask' | (string & {});
@@ -32,6 +33,10 @@ export type Settings = {
   /** Resume where you left off without asking. */
   autoResume: boolean;
   skipSeconds: 10 | 15 | 30;
+  /** How video fills the screen: fit, crop to fill, or stretch. */
+  videoFit: VideoFit;
+  /** Home slider moves on its own. */
+  heroAuto: boolean;
   /** Local alert when new movies or series show up. */
   notifyNewContent: boolean;
   home: HomeSections;
@@ -49,6 +54,8 @@ export const DEFAULT_SETTINGS: Settings = {
   autoplayNext: true,
   autoResume: false,
   skipSeconds: 10,
+  videoFit: 'contain',
+  heroAuto: true,
   notifyNewContent: false,
   home: { continueWatching: true, myList: true, topRated: true, movies: true, series: true, genres: true },
 };
@@ -59,6 +66,7 @@ export function migrateSettings(saved: unknown): Settings {
   const out: Settings = { ...DEFAULT_SETTINGS, ...(s as Partial<Settings>), home: { ...DEFAULT_SETTINGS.home, ...((s.home as object) ?? {}) } };
   if (s.externalPlayer === true && !('playerMode' in s)) out.playerMode = 'ask';
   if (![10, 15, 30].includes(out.skipSeconds)) out.skipSeconds = 10;
+  if (!['contain', 'cover', 'fill'].includes(out.videoFit)) out.videoFit = 'contain';
   return out;
 }
 

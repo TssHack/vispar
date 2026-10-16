@@ -34,10 +34,13 @@ export function Focusable({
 }: Props) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
+  const [hovered, setHovered] = useState(false);
   return (
     <Pressable
       focusable
       {...rest}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
       onFocus={(e) => {
         setFocused(true);
         onFocus?.(e);
@@ -48,7 +51,8 @@ export function Focusable({
       }}
       style={({ pressed }) => [
         style,
-        Platform.OS === 'web' ? ({ cursor: 'pointer', outlineStyle: 'none' } as unknown as ViewStyle) : null,
+        Platform.OS === 'web' ? ({ cursor: 'pointer', outlineStyle: 'none', transitionProperty: 'transform, opacity', transitionDuration: '160ms' } as unknown as ViewStyle) : null,
+        hovered && grow && !focused ? ({ transform: [{ scale: 1.035 }] } as ViewStyle) : null,
         pressed ? { opacity: 0.8 } : null,
         focused && grow ? ({ transform: [{ scale: 1.06 }], zIndex: 2, elevation: 8, shadowColor: colors.accent, shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 6 } } as ViewStyle) : null,
         focused ? focusStyle : null,

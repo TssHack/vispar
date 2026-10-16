@@ -31,6 +31,8 @@ import { getSettings, useSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const FIT_NEXT = { contain: 'cover', cover: 'fill', fill: 'contain' } as const;
+const FIT_LABEL = { contain: 'اصلی', cover: 'پر کردن', fill: 'کشیده' } as const;
 type Menu = null | 'quality' | 'speed' | 'more';
 
 function CtrlButton({ icon, label, onPress, size = 48, iconSize = 24, filled }: { icon: IconName; label: string; onPress: () => void; size?: number; iconSize?: number; filled?: boolean }) {
@@ -91,6 +93,7 @@ export default function PlayerScreen() {
   const { isTV, isWeb, isWide, width } = useLayout();
   const skip = useSetting('skipSeconds');
   const autoplayNext = useSetting('autoplayNext');
+  const [fit, setFit] = useState(getSettings().videoFit);
 
   const type = params.type === 'movie' || params.type === 'serie' ? (params.type as ContentType) : undefined;
   const id = Number(params.id ?? 0);
@@ -361,7 +364,7 @@ export default function PlayerScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <StatusBar hidden={full} style="light" />
-      <VideoView player={player} style={{ flex: 1 }} contentFit="contain" nativeControls={false} allowsPictureInPicture startsPictureInPictureAutomatically />
+      <VideoView player={player} style={{ flex: 1 }} contentFit={fit} nativeControls={false} allowsPictureInPicture startsPictureInPictureAutomatically />
 
       {/* Tap surface: halves for double-tap seek */}
       <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, flexDirection: 'row', direction: 'ltr' }}>
@@ -476,6 +479,11 @@ export default function PlayerScreen() {
                   ))
                 : (
                     <>
+                      <MenuRow
+                        label={`نمای تصویر: ${FIT_LABEL[fit]}`}
+                        sub="جا شدن، پر کردن صفحه یا کشیدن"
+                        onPress={() => setFit(FIT_NEXT[fit])}
+                      />
                       <MenuRow
                         label="پخش با پلیر دیگر"
                         sub="VLC، MX Player و…"

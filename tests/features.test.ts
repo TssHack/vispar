@@ -17,7 +17,7 @@ import { activeCount, applyFilters, EMPTY_FILTERS, optionsFrom } from '@/filters
 import { canResume, continueWatching, isFinished, libraryStore, saveProgress, toggleFavorite, isFavorite } from '@/library/store';
 import { faClock, faNum, setDigitStyle } from '@/lib/format';
 import { pickSource } from '@/lib/sources';
-import { migrateSettings } from '@/settings/store';
+import { DEFAULT_SETTINGS, migrateSettings } from '@/settings/store';
 
 const poster = (o: Partial<Poster>): Poster => ({
   id: 1,
@@ -137,5 +137,19 @@ describe('digits and clock', () => {
     expect(faNum('۲۰۲۶ و 8.1')).toBe('2026 و 8.1');
     expect(faClock(65)).toBe('01:05');
     setDigitStyle('fa');
+  });
+});
+
+
+describe('settings migration (v2.1 options)', () => {
+  it('fills new options for settings saved by older versions', () => {
+    const s = migrateSettings({ accent: 'teal' });
+    expect(s.accent).toBe('teal');
+    expect(s.videoFit).toBe('contain');
+    expect(s.heroAuto).toBe(true);
+    expect(s.notifyNewContent).toBe(false);
+  });
+  it('rejects an unknown video fit', () => {
+    expect(migrateSettings({ videoFit: 'zoom' }).videoFit).toBe(DEFAULT_SETTINGS.videoFit);
   });
 });

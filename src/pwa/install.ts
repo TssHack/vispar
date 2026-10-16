@@ -13,6 +13,8 @@ const isWeb = Platform.OS === 'web' && typeof window !== 'undefined';
 /** iPhone, iPod and iPad (iPadOS 13+ reports itself as a Mac with touch). */
 export function detectIOS(): boolean {
   if (!isWeb) return false;
+  // `?ios=1` previews the iOS install guide in any browser (like `?tv=1` for the TV layout).
+  if (new URLSearchParams(window.location.search).get('ios') === '1') return true;
   const ua = navigator.userAgent || '';
   if (/iPad|iPhone|iPod/.test(ua)) return true;
   return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;

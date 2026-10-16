@@ -247,6 +247,7 @@ export default function Settings() {
           <Chip label="انگلیسی 123" selected={s.digits === 'en'} onPress={() => setSetting('digits', 'en')} />
         </Field>
         <Toggle label="نمایش امتیاز روی پوسترها" value={s.showRatings} onChange={(v) => setSetting('showRatings', v)} />
+        <Toggle label="جابه‌جایی خودکار اسلایدر خانه" value={s.heroAuto} onChange={(v) => setSetting('heroAuto', v)} />
         <Toggle label="کاهش حرکت و انیمیشن" hint="اسلایدر خانه خودکار جابه‌جا نمی‌شود" value={s.reduceMotion} onChange={(v) => setSetting('reduceMotion', v)} />
       </Section>
 
@@ -308,6 +309,11 @@ export default function Settings() {
             ))}
           </Field>
         ) : null}
+        <Field label="نمای تصویر" hint="می‌توانید حین پخش هم عوضش کنید">
+          <Chip label="اصلی" selected={s.videoFit === 'contain'} onPress={() => setSetting('videoFit', 'contain')} />
+          <Chip label="پر کردن صفحه" selected={s.videoFit === 'cover'} onPress={() => setSetting('videoFit', 'cover')} />
+          <Chip label="کشیده" selected={s.videoFit === 'fill'} onPress={() => setSetting('videoFit', 'fill')} />
+        </Field>
         <Field label="پرش با دکمه‌های جلو و عقب">
           {([10, 15, 30] as const).map((n) => (
             <Chip key={n} label={`${faNum(n)} ثانیه`} selected={s.skipSeconds === n} onPress={() => setSetting('skipSeconds', n)} />

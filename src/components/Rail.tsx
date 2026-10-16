@@ -5,6 +5,7 @@ import type { Poster } from '@/api/types';
 import { useLayout } from '@/hooks/useLayout';
 import type { Progress } from '@/library/store';
 
+import { FadeIn } from './FadeIn';
 import { Icon } from './Icon';
 import { ContinueCard } from './LandscapeCard';
 import { PosterCard } from './PosterCard';
@@ -58,7 +59,7 @@ export function Rail({ title, subtitle, items, loading, error, onRetry, seeAll, 
   const gap = isTV ? 22 : 12;
   if (!loading && !error && items.length === 0) return null;
   return (
-    <View style={{ marginTop: 24 }}>
+    <FadeIn style={{ marginTop: 24 }}>
       <SectionHeader title={title} subtitle={subtitle} seeAll={seeAll} />
       {error && items.length === 0 ? (
         <ErrorState error={error} onRetry={onRetry} compact />
@@ -82,7 +83,7 @@ export function Rail({ title, subtitle, items, loading, error, onRetry, seeAll, 
           windowSize={5}
         />
       )}
-    </View>
+    </FadeIn>
   );
 }
 

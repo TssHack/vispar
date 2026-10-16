@@ -1,5 +1,5 @@
 import { router, usePathname, type Href } from 'expo-router';
-import { TextInput, View } from 'react-native';
+import { Platform, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 
@@ -72,19 +72,27 @@ export function BottomNav() {
 
 /** Desktop web: top header with links and a search box. */
 export function TopNav() {
-  const { colors } = useTheme();
+  const { colors, name } = useTheme();
   const { gutter } = useLayout();
   const isActive = useActive();
   const [q, setQ] = useState('');
   const main = NAV.filter((i) => i.path !== '/search');
   return (
     <View
+      style={
+        [
+          { width: '100%', borderBottomWidth: 1, borderBottomColor: colors.line, backgroundColor: name === 'dark' ? 'rgba(8,8,12,0.72)' : 'rgba(247,245,240,0.78)', zIndex: 10 },
+          Platform.OS === 'web' ? { backdropFilter: 'blur(18px) saturate(1.4)' } : null,
+        ] as never
+      }
+    >
+    <View
       style={{
         width: '100%',
         maxWidth: 1440,
         alignSelf: 'center',
         paddingHorizontal: gutter,
-        paddingVertical: 16,
+        paddingVertical: 14,
         flexDirection: 'row',
         flexWrap: 'wrap',
         alignItems: 'center',
@@ -151,6 +159,7 @@ export function TopNav() {
           <Icon name="settings" size={20} />
         </Focusable>
       </View>
+    </View>
     </View>
   );
 }
