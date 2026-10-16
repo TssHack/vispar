@@ -17,7 +17,20 @@ export const DEFAULT_API_BASE = 'https://cdnd.ehsanfazli.ir/api';
  * - Direct: also set EXPO_PUBLIC_API_KEY and the base to the upstream API. The key is then
  *   embedded in the bundle, the same as the current Android app.
  */
+/**
+ * HTTPS relay for plain-HTTP media on the web (see media-relay in the backend repo). Empty means
+ * "none": the web player then explains that browsers block HTTP media. `?mediaBase=` can point at a
+ * relay on localhost for testing; any other value in the URL is ignored.
+ */
+function resolveMediaBase(): string {
+  const fromEnv = (process.env.EXPO_PUBLIC_MEDIA_BASE ?? '').replace(/\/+$/, '');
+  if (typeof window === 'undefined' || !window.location) return fromEnv;
+  const q = new URLSearchParams(window.location.search).get('mediaBase');
+  return q && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(q) ? q.replace(/\/+$/, '') : fromEnv;
+}
+
 export const config = {
+  mediaBase: resolveMediaBase(),
   apiBase: (process.env.EXPO_PUBLIC_API_BASE || DEFAULT_API_BASE).replace(/\/+$/, ''),
   apiKey: process.env.EXPO_PUBLIC_API_KEY ?? '',
   timeoutMs: 30_000,

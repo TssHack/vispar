@@ -6,7 +6,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, BackHandler, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Linking, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ContentType, Source } from '@/api/types';
@@ -587,6 +587,7 @@ export default function PlayerScreen() {
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
             <Button label="پخش با VLC و پلیرهای دیگر" icon="external" onPress={() => openExternalSheet({ kind: 'player', url: current.url, title })} />
+            <Button label="باز کردن در تب مرورگر" icon="play" variant="onImage" onPress={() => void Linking.openURL(current.url)} />
             <Button label="کپی لینک" icon="link" variant="onImage" onPress={() => copyLink(current.url)} />
             {!isStreamOnly(current) ? <Button label="دانلود" icon="download" variant="onImage" onPress={() => download(current, title, { forceChooser: true })} /> : null}
             <Button label="بازگشت" variant="onImage" onPress={goBack} />

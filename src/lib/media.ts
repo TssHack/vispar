@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 
+import { config } from '@/config';
 import { isDesktopApp } from '@/update/target';
 
 const isHttp = (url: string) => /^http:\/\//i.test(url);
@@ -7,6 +8,7 @@ const isHttp = (url: string) => /^http:\/\//i.test(url);
 /** An HTTPS page cannot load plain-HTTP media: the browser blocks it as mixed content. */
 export function isBlockedByBrowser(url: string): boolean {
   if (Platform.OS !== 'web' || isDesktopApp || typeof window === 'undefined') return false;
+  if (config.mediaBase) return false; // the relay makes it playable
   return window.location.protocol === 'https:' && isHttp(url);
 }
 
@@ -17,6 +19,7 @@ export function isBlockedByBrowser(url: string): boolean {
  */
 export function playableUrl(url: string): string {
   if (isDesktopApp && isHttp(url)) return `app://vispar/_media?u=${encodeURIComponent(url)}`;
+  if (Platform.OS === 'web' && !isDesktopApp && config.mediaBase && isHttp(url) && window.location.protocol === 'https:') return `${config.mediaBase}/stream?u=${encodeURIComponent(url)}`;
   return url;
 }
 
