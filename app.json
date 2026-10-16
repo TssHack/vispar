@@ -1,0 +1,114 @@
+{
+  "expo": {
+    "name": "ویسپار",
+    "slug": "vispar",
+    "scheme": "vispar",
+    "version": "2.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#08080C",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "ios": {
+      "bundleIdentifier": "com.fazli.vispar",
+      "supportsTablet": true,
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "vlc-x-callback",
+          "infuse",
+          "nplayer-http",
+          "nplayer-https",
+          "outplayer"
+        ],
+        "ExpoLocalization_forcesRTL": true
+      }
+    },
+    "android": {
+      "package": "com.fazli.vispar",
+      "adaptiveIcon": {
+        "backgroundColor": "#08080C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "ویسپار",
+      "shortName": "ویسپار",
+      "lang": "fa",
+      "dir": "rtl",
+      "themeColor": "#08080C",
+      "backgroundColor": "#08080C"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#08080C",
+          "dark": {
+            "backgroundColor": "#08080C"
+          }
+        }
+      ],
+      "expo-image",
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
+      [
+        "@react-native-tvos/config-tv",
+        {
+          "androidTVBanner": "./assets/tv-banner.png"
+        }
+      ],
+      [
+        "expo-localization",
+        {
+          "forcesRTL": true
+        }
+      ],
+      "./plugins/withExternalApps.js",
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "DEFAULT"
+        }
+      ]
+    ],
+    "extra": {
+      "githubRepo": "tsshack/vispar",
+      "developer": {
+        "name": "احسان فضلی",
+        "nameEn": "Ehsan Fazli",
+        "website": "https://ehsanjs.ir"
+      },
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "forcesRTL": true,
+      "eas": {
+        "projectId": "83d07554-234f-46c2-af37-70b685980a5f"
+      }
+    }
+  }
+}

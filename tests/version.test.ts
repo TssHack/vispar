@@ -1,0 +1,39 @@
+import { describe, expect, it } from 'vitest';
+
+import type { GithubRelease } from '@/api/types';
+import { compareVersions, findUpdate, parseVersion } from '@/update/version';
+
+const rel = (tagName: string, extra: Partial<GithubRelease> = {}): GithubRelease => ({
+  tagName,
+  name: tagName,
+  body: '',
+  htmlUrl: '',
+  publishedAt: '',
+  prerelease: false,
+  draft: false,
+  apkUrl: null,
+  apkSize: null,
+  ...extra,
+});
+
+describe('versions', () => {
+  it('parses tags with prefixes and missing parts', () => {
+    expect(parseVersion('v2.1.0')).toEqual([2, 1, 0]);
+    expect(parseVersion('2.1')).toEqual([2, 1, 0]);
+    expect(parseVersion('release-3')).toEqual([3, 0, 0]);
+    expect(parseVersion('latest')).toBeNull();
+  });
+
+  it('compares numerically, not as strings', () => {
+    expect(compareVersions('v2.10.0', 'v2.9.9')).toBeGreaterThan(0);
+    expect(compareVersions('1.0', '1.0.0')).toBe(0);
+    expect(compareVersions('1.2.3', '1.3')).toBeLessThan(0);
+  });
+
+  it('offers only a newer, stable, published release', () => {
+    const list = [rel('v1.9.0'), rel('v2.2.0', { prerelease: true }), rel('v2.1.0'), rel('v3.0.0', { draft: true })];
+    expect(findUpdate(list, '2.0.0')?.tagName).toBe('v2.1.0');
+    expect(findUpdate(list, '2.1.0')).toBeNull();
+    expect(findUpdate(list, '2.1.0', { includePrerelease: true })?.tagName).toBe('v2.2.0');
+  });
+});
