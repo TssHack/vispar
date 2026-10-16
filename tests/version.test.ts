@@ -55,6 +55,11 @@ describe('pickAsset', () => {
     expect(pickAsset(r, 'android')?.name).toBe('Vispar-2.1.1-android.apk');
     expect(pickAsset(r, 'android', { tv: true })?.name).toBe('Vispar-2.1.1-android-tv.apk');
   });
+  it('never updates a phone to the x86_64-only APK', () => {
+    const r = { assets: [a('Vispar-2.1.2-android-tv-x86_64.apk'), a('Vispar-2.1.2-android-tv.apk'), a('Vispar-2.1.2-android-x86_64.apk'), a('Vispar-2.1.2-android.apk')] };
+    expect(pickAsset(r, 'android')?.name).toBe('Vispar-2.1.2-android.apk');
+    expect(pickAsset(r, 'android', { tv: true })?.name).toBe('Vispar-2.1.2-android-tv.apk');
+  });
   it('returns null when nothing matches', () => {
     expect(pickAsset({ assets: [] }, 'windows')).toBeNull();
   });

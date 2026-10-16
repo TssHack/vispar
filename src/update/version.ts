@@ -40,7 +40,12 @@ export function pickAsset(release: Pick<GithubRelease, 'assets'>, target: Releas
   switch (target) {
     case 'android':
       // Phones and TVs get separate APKs (the TV one has "tv" in its name).
-      return list.find((a) => has(a, '.apk') && /tv/i.test(a.name) === !!opts.tv) ?? list.find((a) => has(a, '.apk')) ?? null;
+      // The universal APK is the one to update from; the x86_64-only builds are for emulators.
+      return (
+        list.find((a) => has(a, '.apk') && !/x86/i.test(a.name) && /tv/i.test(a.name) === !!opts.tv) ??
+        list.find((a) => has(a, '.apk') && !/x86/i.test(a.name)) ??
+        null
+      );
     case 'windows':
       return list.find((a) => has(a, '.exe') && !/portable/i.test(a.name)) ?? list.find((a) => has(a, '.exe')) ?? null;
     case 'mac':
