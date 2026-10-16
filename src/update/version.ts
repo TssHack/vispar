@@ -34,12 +34,13 @@ export function findUpdate(releases: GithubRelease[], current: string, opts: { i
 }
 
 /** Picks the installer for a platform out of a release's files (Windows prefers the setup over the portable build). */
-export function pickAsset(release: Pick<GithubRelease, 'assets'>, target: ReleaseTarget): ReleaseAsset | null {
+export function pickAsset(release: Pick<GithubRelease, 'assets'>, target: ReleaseTarget, opts: { tv?: boolean } = {}): ReleaseAsset | null {
   const has = (a: ReleaseAsset, ...ext: string[]) => ext.some((e) => a.name.toLowerCase().endsWith(e));
   const list = release.assets;
   switch (target) {
     case 'android':
-      return list.find((a) => has(a, '.apk')) ?? null;
+      // Phones and TVs get separate APKs (the TV one has "tv" in its name).
+      return list.find((a) => has(a, '.apk') && /tv/i.test(a.name) === !!opts.tv) ?? list.find((a) => has(a, '.apk')) ?? null;
     case 'windows':
       return list.find((a) => has(a, '.exe') && !/portable/i.test(a.name)) ?? list.find((a) => has(a, '.exe')) ?? null;
     case 'mac':

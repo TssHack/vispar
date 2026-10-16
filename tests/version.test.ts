@@ -50,6 +50,11 @@ describe('pickAsset', () => {
     expect(pickAsset(release, 'mac')?.name).toMatch(/\.dmg$/);
     expect(pickAsset(release, 'linux')?.name).toMatch(/AppImage$/);
   });
+  it('keeps phone and TV APKs apart', () => {
+    const r = { assets: [a('Vispar-2.1.1-android-tv.apk'), a('Vispar-2.1.1-android.apk')] };
+    expect(pickAsset(r, 'android')?.name).toBe('Vispar-2.1.1-android.apk');
+    expect(pickAsset(r, 'android', { tv: true })?.name).toBe('Vispar-2.1.1-android-tv.apk');
+  });
   it('returns null when nothing matches', () => {
     expect(pickAsset({ assets: [] }, 'windows')).toBeNull();
   });

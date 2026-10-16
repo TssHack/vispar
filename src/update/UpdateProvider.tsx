@@ -118,7 +118,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
   }, [checkNow, checkOta]);
 
   const install = useCallback(() => {
-    const asset = release && target ? pickAsset(release, target) : null;
+    const asset = release && target ? pickAsset(release, target, { tv: Platform.isTV }) : null;
     const url = asset?.url ?? release?.htmlUrl ?? `${repoUrl}/releases/latest`;
     Linking.openURL(url).catch(() => {});
   }, [release]);

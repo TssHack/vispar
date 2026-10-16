@@ -95,13 +95,15 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 
 | Platform | How you get it |
 | --- | --- |
-| Android | APK from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
-| Android TV | Same project built with the `react-native-tvos` fork (`npm run prebuild:tv`) |
+| Android | `Vispar-*-android.apk` from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
+| Android TV | `Vispar-*-android-tv.apk` from Releases (leanback launcher, banner and D-pad focus). Built with the `react-native-tvos` fork |
 | iOS | Open the web app in Safari and follow the in-app *Add to Home Screen* guide, or build with Xcode / EAS |
 | Web / PWA | `npm run build:web` and host the `dist/` folder |
 | Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
 | macOS | `Vispar-*-mac-*.dmg` |
 | Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
+
+Both APKs are built on GitHub's runners by the **Android builds** workflow (`.github/workflows/android.yml`, no EAS account needed). They are signed with the standard debug key, so they install directly but are not meant for the Play Store. Install the TV APK from a USB drive or with `adb install`.
 
 The desktop builds are produced by the **Desktop builds** workflow (`.github/workflows/desktop.yml`). Push a `v*` tag and the installers are attached to the release automatically.
 
@@ -162,13 +164,15 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 
 | Platform | How you get it |
 | --- | --- |
-| Android | APK from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
-| Android TV | Same project built with the `react-native-tvos` fork (`npm run prebuild:tv`) |
+| Android | `Vispar-*-android.apk` from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
+| Android TV | `Vispar-*-android-tv.apk` from Releases (leanback launcher, banner and D-pad focus). Built with the `react-native-tvos` fork |
 | iOS | Open the web app in Safari and follow the in-app *Add to Home Screen* guide, or build with Xcode / EAS |
 | Web / PWA | `npm run build:web` and host the `dist/` folder |
 | Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
 | macOS | `Vispar-*-mac-*.dmg` |
 | Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
+
+Both APKs are built on GitHub's runners by the **Android builds** workflow (`.github/workflows/android.yml`, no EAS account needed). They are signed with the standard debug key, so they install directly but are not meant for the Play Store. Install the TV APK from a USB drive or with `adb install`.
 
 The desktop builds are produced by the **Desktop builds** workflow (`.github/workflows/desktop.yml`). Push a `v*` tag and the installers are attached to the release automatically.
 
@@ -217,7 +221,7 @@ The Electron shell serves the exported web app from a private `app://` origin, o
 
 1. Bump `version` in `app.json` and `desktop/package.json`.
 2. Push a tag such as `v2.1.0`. CI builds Windows, macOS and Linux installers and attaches them.
-3. Add an APK (`npx eas-cli build -p android --profile production`) and write the notes in the release body. That text is what users see in the update sheet.
+3. The **Android builds** workflow attaches the phone and TV APKs on the same tag. Write the notes in the release body. That text is what users see in the update sheet.
 
 Installed apps check at most every 12 hours, or on demand from **Settings → Check for updates**.
 

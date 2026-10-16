@@ -1,4 +1,4 @@
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
@@ -48,7 +48,7 @@ export function UpdateSheet() {
   if (!release) return null;
   const notes = cleanNotes(release.body);
   const target = releaseTarget();
-  const asset = target ? pickAsset(release, target) : null;
+  const asset = target ? pickAsset(release, target, { tv: Platform.isTV }) : null;
   const centered = isWide || isTV;
 
   return (
