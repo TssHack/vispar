@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="README.fa.md">فارسی</a> · <a href="https://github.com/TssHack/vispar/releases/latest">Download</a> · <a href="https://ehsanfazli.ir">Developer</a>
+  <a href="https://vispar.ehsanfazli.ir"><b>Open the web app</b></a> · <a href="README.fa.md">فارسی</a> · <a href="https://github.com/TssHack/vispar/releases/latest">Download</a> · <a href="https://ehsanfazli.ir">Developer</a>
 </p>
 
 <p align="center">
@@ -98,7 +98,7 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 | Android | `Vispar-*-android.apk` from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
 | Android TV | `Vispar-*-android-tv.apk` from Releases (leanback launcher, banner and D-pad focus). Built with the `react-native-tvos` fork |
 | iOS | Open the web app in Safari and follow the in-app *Add to Home Screen* guide, or build with Xcode / EAS |
-| Web / PWA | `npm run build:web` and host the `dist/` folder |
+| Web / PWA | [vispar.ehsanfazli.ir](https://vispar.ehsanfazli.ir), or `npm run build:web` and host the `dist/` folder (`vercel.json` is included) |
 | Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
 | macOS | `Vispar-*-mac-*.dmg` |
 | Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
@@ -167,7 +167,7 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 | Android | `Vispar-*-android.apk` from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
 | Android TV | `Vispar-*-android-tv.apk` from Releases (leanback launcher, banner and D-pad focus). Built with the `react-native-tvos` fork |
 | iOS | Open the web app in Safari and follow the in-app *Add to Home Screen* guide, or build with Xcode / EAS |
-| Web / PWA | `npm run build:web` and host the `dist/` folder |
+| Web / PWA | [vispar.ehsanfazli.ir](https://vispar.ehsanfazli.ir), or `npm run build:web` and host the `dist/` folder (`vercel.json` is included) |
 | Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
 | macOS | `Vispar-*-mac-*.dmg` |
 | Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
