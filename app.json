@@ -3,7 +3,7 @@
     "name": "ویسپار",
     "slug": "vispar",
     "scheme": "vispar",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -105,7 +105,7 @@
       "developer": {
         "name": "احسان فضلی",
         "nameEn": "Ehsan Fazli",
-        "website": "https://ehsanjs.ir"
+        "website": "https://ehsanfazli.ir"
       },
       "router": {
         "asyncRoutes": {

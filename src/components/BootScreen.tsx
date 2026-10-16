@@ -190,7 +190,7 @@ export function BootScreen({ status, onRetry, onContinue }: { status: Exclude<Ne
 
       <Animated.View style={[{ position: 'absolute', bottom: insets.bottom + 20 }, { opacity: rise }]}>
         <Text size={11} color="muted" align="center">
-          ehsanjs.ir
+          ehsanfazli.ir
         </Text>
       </Animated.View>
     </View>

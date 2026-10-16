@@ -1,10 +1,10 @@
 {
   "name": "vispar-desktop",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "description": "Vispar desktop app (Windows, macOS, Linux)",
-  "author": "Ehsan Fazli <https://ehsanjs.ir>",
-  "homepage": "https://ehsanjs.ir",
+  "author": "Ehsan Fazli <https://ehsanfazli.ir>",
+  "homepage": "https://ehsanfazli.ir",
   "license": "UNLICENSED",
   "main": "main.js",
   "scripts": {

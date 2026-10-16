@@ -6,7 +6,7 @@
 
 اپ فیلم و سریال برای **اندروید، iOS، وب و Android TV** از یک کدبیس، با Expo و React Native.
 
-طراحی و توسعه: **احسان فضلی** · [ehsanjs.ir](https://ehsanjs.ir)
+طراحی و توسعه: **احسان فضلی** · [ehsanfazli.ir](https://ehsanfazli.ir)
 
 ## امکانات
 
@@ -56,7 +56,7 @@ npm run android             # اندروید (نیاز به development build د
 
 ## دسترسی به API
 
-اپ فقط یک آدرس پایه‌ی API لازم دارد. سرور و پراکسی بک‌اند در این مخزن نیست و خصوصی می‌ماند.
+اپ به‌طور پیش‌فرض به پراکسی میزبانی‌شده روی Vercel وصل است (`https://cdnd.ehsanfazli.ir/api`) و فایل `.env` اختیاری است. سورس بک‌اند خصوصی است. برای پراکسی خودتان `EXPO_PUBLIC_API_BASE` را بگذارید.
 
 ```bash
 cp .env.example .env

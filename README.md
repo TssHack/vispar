@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="README.fa.md">فارسی</a> · <a href="https://github.com/TssHack/vispar/releases/latest">Download</a> · <a href="https://ehsanjs.ir">Developer</a>
+  <a href="README.fa.md">فارسی</a> · <a href="https://github.com/TssHack/vispar/releases/latest">Download</a> · <a href="https://ehsanfazli.ir">Developer</a>
 </p>
 
 <p align="center">
@@ -135,6 +135,73 @@ npm run web              # or: npm run android
 
 ### Backend
 
+Out of the box the app uses the hosted proxy at `https://cdnd.ehsanfazli.ir/api`. It keeps the upstream API key on the server, adds CORS for the web build, and only forwards the four read-only routes the app needs. Its source is private. To use your own, set `EXPO_PUBLIC_API_BASE` in `.env`. Direct mode (`EXPO_PUBLIC_API_KEY`) works on native builds but embeds the key in the app, so avoid it for public releases.
+
+### Desktop and web
+
+<p align="center">
+  <img src="docs/screenshots/home-desktop.jpg" width="100%" alt="Desktop home">
+</p>
+<p align="center">
+  <img src="docs/screenshots/catalog-desktop.jpg" width="49%" alt="Desktop catalog">
+  <img src="docs/screenshots/detail-desktop.jpg" width="49%" alt="Desktop details">
+</p>
+<p align="center">
+  <img src="docs/screenshots/footer-desktop.jpg" width="100%" alt="Web footer">
+</p>
+
+### Android TV
+
+<p align="center">
+  <img src="docs/screenshots/tv-home.jpg" width="100%" alt="Android TV home with side rail">
+</p>
+
+Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?ios=1`, and the splash states with `?splash=hold` or `?splash=offline`.
+
+## Platforms
+
+| Platform | How you get it |
+| --- | --- |
+| Android | APK from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
+| Android TV | Same project built with the `react-native-tvos` fork (`npm run prebuild:tv`) |
+| iOS | Open the web app in Safari and follow the in-app *Add to Home Screen* guide, or build with Xcode / EAS |
+| Web / PWA | `npm run build:web` and host the `dist/` folder |
+| Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
+| macOS | `Vispar-*-mac-*.dmg` |
+| Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
+
+The desktop builds are produced by the **Desktop builds** workflow (`.github/workflows/desktop.yml`). Push a `v*` tag and the installers are attached to the release automatically.
+
+> macOS and Windows builds are not code-signed yet, so the OS will show a warning on first launch.
+
+## TV and remote control
+
+- Every control has a visible focus state (ring, glow and a slight lift on posters).
+- A labelled side rail replaces the tab bar and remembers where you are.
+- In the player the controls auto-hide. With them hidden: **← / →** seek, **OK** play or pause, **↑ / ↓** bring the controls back. Play/Pause, Rewind and Fast-forward media keys work, and **Back** closes a menu first, then the controls, then the player.
+- Content is kept inside a TV-safe margin and sized for 10-foot viewing.
+
+## Getting started
+
+```bash
+git clone https://github.com/TssHack/vispar.git
+cd vispar
+npm install
+cp .env.example .env     # set EXPO_PUBLIC_API_BASE
+npm run web              # or: npm run android
+```
+
+| Command | What it does |
+| --- | --- |
+| `npm run web` / `android` / `ios` | Start the dev server |
+| `npm run start:tv` | Dev server in TV mode |
+| `npm run typecheck` | TypeScript, strict |
+| `npm test` | Unit tests (Vitest) |
+| `npm run build:web` | Export the web app with PWA tags into `dist/` |
+| `npm run brand:icons` / `brand:pwa` | Regenerate app and PWA icons from the logo |
+
+### Backend
+
 The app talks to a catalog API through a single base URL. The proxy that keeps the API key on a server and adds CORS is **not part of this repository**. Point `EXPO_PUBLIC_API_BASE` at your own proxy. Direct mode (`EXPO_PUBLIC_API_KEY`) works on native builds, but it embeds the key in the app, so avoid it for public releases.
 
 ### Desktop
@@ -182,4 +249,4 @@ Expo SDK 58 · React Native 0.88 · expo-router · TanStack Query · expo-video 
 
 ## Credits
 
-Designed and developed by **[Ehsan Fazli](https://ehsanjs.ir)**.
+Designed and developed by **[Ehsan Fazli](https://ehsanfazli.ir)**.

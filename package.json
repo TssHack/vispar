@@ -1,6 +1,6 @@
 {
   "name": "vispar",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "main": "expo-router/entry",
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -57,7 +57,7 @@
   },
   "private": true,
   "description": "Vispar — cross-platform movie & series app (Android, iOS, Web, Android TV)",
-  "author": "Ehsan Fazli (https://ehsanjs.ir)",
+  "author": "Ehsan Fazli (https://ehsanfazli.ir)",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",

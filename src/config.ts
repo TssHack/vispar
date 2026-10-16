@@ -7,6 +7,9 @@ type Extra = {
 
 const extra = (Constants.expoConfig?.extra ?? {}) as Extra;
 
+/** Public proxy (Vercel). It holds the upstream key and answers CORS, so no key ships in the app. */
+export const DEFAULT_API_BASE = 'https://cdnd.ehsanfazli.ir/api';
+
 /**
  * API access has two modes:
  * - Proxy (recommended, and required on web): EXPO_PUBLIC_API_BASE points at the Worker in
@@ -15,14 +18,14 @@ const extra = (Constants.expoConfig?.extra ?? {}) as Extra;
  *   embedded in the bundle, the same as the current Android app.
  */
 export const config = {
-  apiBase: (process.env.EXPO_PUBLIC_API_BASE ?? 'https://hostinnegar.com/api').replace(/\/+$/, ''),
+  apiBase: (process.env.EXPO_PUBLIC_API_BASE || DEFAULT_API_BASE).replace(/\/+$/, ''),
   apiKey: process.env.EXPO_PUBLIC_API_KEY ?? '',
   timeoutMs: 30_000,
   githubRepo: extra.githubRepo ?? 'tsshack/vispar',
   developer: {
     name: extra.developer?.name ?? 'احسان فضلی',
     nameEn: extra.developer?.nameEn ?? 'Ehsan Fazli',
-    website: extra.developer?.website ?? 'https://ehsanjs.ir',
+    website: extra.developer?.website ?? 'https://ehsanfazli.ir',
   },
 };
 
