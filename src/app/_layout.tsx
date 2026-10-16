@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
@@ -9,6 +9,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BootScreen, OfflineBanner } from '@/components/BootScreen';
 import { toast, ToastHost } from '@/components/Toast';
+import { onNotificationTap } from '@/notifications';
+import { startContentWatcher } from '@/notifications/watcher';
+import { InstallPrompt } from '@/pwa/InstallPrompt';
+import { registerPwa } from '@/pwa/register';
 import { checkConnection, startMonitor, useNetStatus } from '@/net/connectivity';
 import { ExternalSheetHost } from '@/external/ExternalSheet';
 import { fontFiles } from '@/theme/fonts';
@@ -17,6 +21,7 @@ import { UpdateProvider } from '@/update/UpdateProvider';
 import { OtaBanner, UpdateSheet } from '@/update/UpdateSheet';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+registerPwa();
 
 function Shell() {
   const { colors, name, ready } = useTheme();
@@ -35,6 +40,13 @@ function Shell() {
     const t = setTimeout(() => setMinShown(true), 1100);
     return () => clearTimeout(t);
   }, [done]);
+
+  useEffect(() => {
+    if (net !== 'online') return;
+    startContentWatcher();
+  }, [net]);
+
+  useEffect(() => onNotificationTap((url) => router.push(url as never)), []);
 
   useEffect(() => {
     if (net === 'online' && wasDown.current) {
@@ -78,6 +90,7 @@ function Shell() {
         <Stack.Screen name="player" options={{ animation: 'fade', presentation: 'fullScreenModal' }} />
       </Stack>
       <OfflineBanner status={net} onRetry={() => void checkConnection()} />
+      <InstallPrompt />
       <UpdateSheet />
       <OtaBanner />
       <ExternalSheetHost />

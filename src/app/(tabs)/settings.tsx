@@ -12,6 +12,9 @@ import { toast } from '@/components/Toast';
 import { config, repoUrl } from '@/config';
 import { appsFor, detectInstalled } from '@/external/launch';
 import { useLayout } from '@/hooks/useLayout';
+import { getPermission, notificationsSupported, notifyLocal, requestPermission } from '@/notifications';
+import { checkNewContent } from '@/notifications/watcher';
+import { detectStandalone, openInstallGuide, promptInstall, useInstallKind } from '@/pwa/install';
 import { clearFavorites, clearHistory } from '@/library/store';
 import { confirm } from '@/lib/confirm';
 import { faNum, faVersion } from '@/lib/format';
@@ -125,7 +128,20 @@ export default function Settings() {
   useEffect(() => {
     detectInstalled().then(setInstalled);
   }, []);
+  const installKind = useInstallKind();
+  const canNotify = notificationsSupported();
   const phone = !isTV && !isWide;
+  const toggleNotify = async (on: boolean) => {
+    if (!on) return setSetting('notifyNewContent', false);
+    const perm = (await getPermission()) === 'granted' ? 'granted' : await requestPermission();
+    if (perm !== 'granted') {
+      toast('اجازه‌ی اعلان داده نشد. از تنظیمات دستگاه فعالش کنید.', 'alert');
+      return;
+    }
+    setSetting('notifyNewContent', true);
+    toast('اعلان‌ها فعال شد', 'bell');
+    void checkNewContent(true);
+  };
   const native = Platform.OS !== 'web';
   const players = appsFor('player', { tv: isTV });
   const downloaders = appsFor('downloader');
@@ -239,6 +255,41 @@ export default function Settings() {
           <Toggle key={k} label={HOME_LABELS[k]} value={s.home[k]} onChange={(v) => setHomeSection(k, v)} />
         ))}
       </Section>
+
+      {canNotify || Platform.OS === 'web' ? (
+        <Section title="اعلان‌ها و نصب" icon="bell">
+          {canNotify ? (
+            <>
+              <Toggle label="اعلان فیلم و سریال جدید" hint="وقتی عنوان تازه‌ای اضافه شد خبرتان می‌کنیم" value={s.notifyNewContent} onChange={toggleNotify} />
+              {s.notifyNewContent ? (
+                <Button
+                  label="ارسال اعلان آزمایشی"
+                  icon="bell"
+                  variant="surface"
+                  onPress={async () => {
+                    const ok = await notifyLocal({ title: 'ویسپار', body: 'اعلان‌ها درست کار می‌کنند.' });
+                    if (!ok) toast('اعلان ارسال نشد', 'alert');
+                  }}
+                />
+              ) : null}
+            </>
+          ) : null}
+          {Platform.OS === 'web' && !isTV ? (
+            installKind === 'ios' ? (
+              <Button label="راهنمای افزودن به صفحه‌ی اصلی" icon="plus" variant="surface" onPress={openInstallGuide} />
+            ) : installKind === 'prompt' ? (
+              <Button label="نصب ویسپار روی این دستگاه" icon="download" variant="surface" onPress={() => void promptInstall()} />
+            ) : detectStandalone() ? (
+              <Text size={13} color="muted">
+                ویسپار روی این دستگاه نصب است ✓
+              </Text>
+            ) : null
+          ) : null}
+          {Platform.OS === 'web' && !isTV ? (
+            <LinkRow icon="desktop" title="نسخه‌ی ویندوز، مک و لینوکس" subtitle={`${repoUrl.replace('https://', '')}/releases`} url={`${repoUrl}/releases/latest`} />
+          ) : null}
+        </Section>
+      ) : null}
 
       <Section title="پخش" icon="play">
         <Field label="کیفیت پیش‌فرض" hint="اگر این کیفیت نبود، نزدیک‌ترین کیفیت پایین‌تر پخش می‌شود">

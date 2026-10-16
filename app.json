@@ -85,6 +85,13 @@
           "forcesRTL": true
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#F2B544"
+        }
+      ],
       "./plugins/withExternalApps.js",
       [
         "expo-screen-orientation",

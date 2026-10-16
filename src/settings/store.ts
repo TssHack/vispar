@@ -32,6 +32,8 @@ export type Settings = {
   /** Resume where you left off without asking. */
   autoResume: boolean;
   skipSeconds: 10 | 15 | 30;
+  /** Local alert when new movies or series show up. */
+  notifyNewContent: boolean;
   home: HomeSections;
 };
 
@@ -47,6 +49,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoplayNext: true,
   autoResume: false,
   skipSeconds: 10,
+  notifyNewContent: false,
   home: { continueWatching: true, myList: true, topRated: true, movies: true, series: true, genres: true },
 };
 
