@@ -25,7 +25,7 @@
     "extraResources": [{ "from": "../dist", "to": "web" }],
     "artifactName": "Vispar-${version}-${os}-${arch}.${ext}",
     "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "installerLanguages": ["fa_IR", "en_US"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
     "mac": { "target": ["dmg", "zip"], "icon": "build/icon.png", "category": "public.app-category.entertainment" },
     "linux": {
       "target": ["AppImage", "deb"],
