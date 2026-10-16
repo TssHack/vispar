@@ -4,7 +4,7 @@ import { Linking, Platform, Share } from 'react-native';
 
 import { toast } from '@/components/Toast';
 
-import { ALL_APPS, appStoreUrl, m3uPlaylist, playStoreUrl, playStoreWebUrl, type ExternalApp, type ExternalKind } from './apps';
+import { ALL_APPS, appStoreUrl, m3uPlaylist, playStoreUrl, androidIntentUrl, playStoreWebUrl, type ExternalApp, type ExternalKind } from './apps';
 
 const VIEW = 'android.intent.action.VIEW';
 const SEND = 'android.intent.action.SEND';
@@ -43,8 +43,21 @@ export async function appIcon(app: ExternalApp): Promise<string | null> {
   }
 }
 
+/** Which kind of device the web app is running on (plain browsers cannot launch apps the same way). */
+export function webPlatform(): 'android' | 'ios' | 'desktop' {
+  if (Platform.OS !== 'web' || typeof navigator === 'undefined') return 'desktop';
+  const ua = navigator.userAgent || '';
+  if (/Android/i.test(ua)) return 'android';
+  if (/iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+  return 'desktop';
+}
+
 /** Apps that make sense on this platform, in catalogue order. */
 export function appsFor(kind: ExternalKind, opts: { tv?: boolean } = {}): ExternalApp[] {
+  if (Platform.OS === 'web') {
+    const wp = webPlatform();
+    return ALL_APPS.filter((a) => a.kind === kind && (wp === 'android' ? !!a.android : wp === 'ios' ? !!a.ios : false));
+  }
   return ALL_APPS.filter((a) => a.kind === kind && (Platform.OS === 'android' ? !!a.android && (!opts.tv || a.tv) : Platform.OS === 'ios' ? !!a.ios : false));
 }
 
@@ -62,6 +75,18 @@ async function openStore(app: ExternalApp) {
 
 /** Opens `url` in a specific external app. Falls back to its store page when it isn't installed. */
 export async function openInApp(app: ExternalApp, url: string, title: string): Promise<boolean> {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const wp = webPlatform();
+    try {
+      if (wp === 'android' && app.android) window.location.href = androidIntentUrl(url, { pkg: app.android.package, title });
+      else if (wp === 'ios' && app.ios) window.location.href = app.ios.url(url, title);
+      else return false;
+      return true;
+    } catch {
+      toast('باز کردن برنامه ممکن نشد', 'alert');
+      return false;
+    }
+  }
   try {
     if (Platform.OS === 'android' && app.android) {
       const send = app.android.action === 'send';
@@ -104,14 +129,8 @@ export async function openWithSystemPlayer(url: string, title: string) {
 /** Browser / system download manager. */
 export function downloadWithSystem(url: string, title: string) {
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = title;
-    a.rel = 'noopener';
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    // A plain new-tab navigation: `<a download>` on an http URL is blocked from https pages.
+    window.open(url, '_blank', 'noopener');
     return;
   }
   Linking.openURL(url).catch(() => toast('باز کردن لینک ممکن نشد', 'alert'));
@@ -148,4 +167,15 @@ export function downloadPlaylist(url: string, title: string) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(href), 10_000);
   toast('فایل پلی‌لیست دانلود شد؛ با VLC یا پلیر سیستم بازش کنید', 'download');
+}
+
+/** Web: open the file in a new browser tab. Chrome, Edge and Firefox play H.264 MP4/MKV there. */
+export function openInBrowserTab(url: string) {
+  if (typeof window === 'undefined') return;
+  window.open(url, '_blank', 'noopener');
+}
+
+/** Web on Android: the system "open with" chooser for the video. */
+export function openWithAndroidChooser(url: string, title: string) {
+  if (typeof window !== 'undefined') window.location.href = androidIntentUrl(url, { title });
 }

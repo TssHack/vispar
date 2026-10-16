@@ -93,3 +93,12 @@ export function appStoreUrl(id: string) {
 export function m3uPlaylist(url: string, title: string): string {
   return `#EXTM3U\n#EXTINF:-1,${title.replace(/[\r\n]/g, ' ')}\n${url}\n`;
 }
+
+/** Android Chrome: an intent:// link opens the file in a chosen app, or in the Play Store page if it is missing. */
+export function androidIntentUrl(url: string, opts: { pkg?: string; title?: string } = {}): string {
+  const u = new URL(url);
+  const scheme = u.protocol.replace(':', '');
+  const fallback = opts.pkg ? `;S.browser_fallback_url=${encodeURIComponent(`https://play.google.com/store/apps/details?id=${opts.pkg}`)}` : '';
+  return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=${scheme};action=android.intent.action.VIEW;type=video/*${opts.pkg ? `;package=${opts.pkg}` : ''}${opts.title ? `;S.title=${encodeURIComponent(opts.title)}` : ''}${fallback};end`;
+}
+

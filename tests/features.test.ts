@@ -166,3 +166,20 @@ describe('explainPlaybackError', () => {
     expect(explainPlaybackError(undefined).title).toMatch(/ممکن نشد/);
   });
 });
+
+import { androidIntentUrl } from '@/external/apps';
+
+describe('androidIntentUrl', () => {
+  it('builds an intent that opens the file in a named app, with a Play Store fallback', () => {
+    const u = androidIntentUrl('http://host.example/film1/a%20b.mkv?x=1', { pkg: 'org.videolan.vlc', title: 'Film' });
+    expect(u.startsWith('intent://host.example/film1/a%20b.mkv?x=1#Intent;')).toBe(true);
+    expect(u).toContain('scheme=http;');
+    expect(u).toContain('package=org.videolan.vlc');
+    expect(u).toContain('type=video/*');
+    expect(u).toContain('S.browser_fallback_url=');
+    expect(u.endsWith(';end')).toBe(true);
+  });
+  it('omits the package for the system chooser', () => {
+    expect(androidIntentUrl('https://h/x.mp4')).not.toContain('package=');
+  });
+});

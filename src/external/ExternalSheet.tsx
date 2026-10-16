@@ -11,7 +11,7 @@ import { setSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import type { ExternalApp } from './apps';
-import { appIcon, appsFor, copyLink, detectInstalled, downloadPlaylist, downloadWithSystem, openInApp, openWithSystemPlayer, shareLink } from './launch';
+import { appIcon, appsFor, copyLink, detectInstalled, downloadPlaylist, downloadWithSystem, openInApp, openWithSystemPlayer, shareLink, openInBrowserTab, openWithAndroidChooser, webPlatform } from './launch';
 import { setSheetListener, type SheetRequest } from './sheet';
 
 function Row({ icon, image, title, subtitle, onPress, badge }: { icon?: IconName; image?: string | null; title: string; subtitle?: string; onPress: () => void; badge?: string }) {
@@ -134,25 +134,41 @@ export function ExternalSheetHost() {
                 onPress={() => pick(() => openInApp(app, req.url, req.title), app.id)}
               />
             ))}
-            {isPlayer ? (
+            {isPlayer && Platform.OS === 'web' && webPlatform() === 'android' ? (
+              <Row icon="tv" title="سایر برنامه‌ها" subtitle="انتخاب از برنامه‌های نصب‌شده روی گوشی" onPress={() => pick(() => openWithAndroidChooser(req.url, req.title))} />
+            ) : null}
+            {isPlayer && Platform.OS === 'web' && webPlatform() === 'desktop' ? (
               <Row
                 icon="tv"
-                title={Platform.OS === 'web' ? 'پلیر سیستم (VLC، PotPlayer، MPC)' : 'سایر برنامه‌ها'}
-                subtitle={Platform.OS === 'web' ? 'فایل پلی‌لیست ‎.m3u دانلود می‌شود' : 'انتخاب از برنامه‌های نصب‌شده'}
-                onPress={() => pick(() => (Platform.OS === 'web' ? downloadPlaylist(req.url, req.title) : openWithSystemPlayer(req.url, req.title)))}
+                title="VLC، PotPlayer یا MPC"
+                subtitle="فایل پلی‌لیست ‎.m3u دانلود می‌شود؛ بازش کنید تا در پلیر سیستم پخش شود"
+                badge="پیشنهادی"
+                onPress={() => pick(() => downloadPlaylist(req.url, req.title))}
               />
-            ) : (
+            ) : null}
+            {isPlayer && Platform.OS === 'web' ? (
+              <Row icon="globe" title="باز کردن در تب مرورگر" subtitle="پلیر خود مرورگر؛ فایل‌های H.264 معمولاً پخش می‌شوند" onPress={() => pick(() => openInBrowserTab(req.url))} />
+            ) : null}
+            {isPlayer && Platform.OS !== 'web' ? (
+              <Row icon="tv" title="سایر برنامه‌ها" subtitle="انتخاب از برنامه‌های نصب‌شده" onPress={() => pick(() => openWithSystemPlayer(req.url, req.title))} />
+            ) : null}
+            {!isPlayer ? (
               <Row
                 icon="globe"
                 title={Platform.OS === 'web' ? 'دانلود با مرورگر' : 'مرورگر / مدیر دانلود سیستم'}
                 subtitle={Platform.OS === 'web' ? 'IDM و FDM هم دانلود مرورگر را می‌گیرند' : undefined}
                 onPress={() => pick(() => downloadWithSystem(req.url, req.title), 'system')}
               />
-            )}
+            ) : null}
             {Platform.OS !== 'web' ? <Row icon="share" title="اشتراک‌گذاری لینک" subtitle="ارسال به هر برنامه‌ای" onPress={() => pick(() => shareLink(req.url, req.title))} /> : null}
             <Row icon="check" title="کپی لینک" subtitle={Platform.OS === 'web' ? 'برای JDownloader یا IDM' : undefined} onPress={() => pick(() => copyLink(req.url))} />
           </ScrollView>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
+          {Platform.OS === 'web' ? (
+            <Text size={11} color="muted">
+              مرورگر اجازه‌ی پخش فایل‌های HTTP را داخل صفحه نمی‌دهد؛ برای پخش درون‌برنامه‌ای، برنامه‌ی اندروید یا دسکتاپ ویسپار را نصب کنید.
+            </Text>
+          ) : null}
+          <View style={{ display: Platform.OS === 'web' ? 'none' : 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
             <Text size={13} color="text2">
               انتخابم را به خاطر بسپار
             </Text>

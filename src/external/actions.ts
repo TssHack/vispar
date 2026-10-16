@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 import type { ContentType, Source } from '@/api/types';
 import { getSettings } from '@/settings/store';
+import { isDesktopApp } from '@/update/target';
 
 import { findApp } from './apps';
 import { downloadWithSystem, openInApp } from './launch';
@@ -30,7 +31,14 @@ export function playerParams(source: Source, ctx: PlayContext) {
   };
 }
 
+/** The web app is for browsing: HTTPS pages cannot load these plain-HTTP files, so playing hands off to an external player. */
+const webHandsOff = Platform.OS === 'web' && !isDesktopApp;
+
 export function playInternal(source: Source, ctx: PlayContext, replace = false) {
+  if (webHandsOff) {
+    openExternalSheet({ kind: 'player', url: source.url, title: ctx.title });
+    return;
+  }
   const nav = { pathname: '/player' as const, params: playerParams(source, ctx) };
   if (replace) router.replace(nav);
   else router.push(nav);
@@ -39,8 +47,8 @@ export function playInternal(source: Source, ctx: PlayContext, replace = false) 
 /** Plays according to the user's "player" setting: Vispar, always ask, or a chosen app. */
 export function play(source: Source, ctx: PlayContext, opts: { forceChooser?: boolean } = {}) {
   const mode = getSettings().playerMode;
-  if (opts.forceChooser || mode === 'ask') {
-    openExternalSheet({ kind: 'player', url: source.url, title: ctx.title, playInternal: () => playInternal(source, ctx) });
+  if (opts.forceChooser || mode === 'ask' || webHandsOff) {
+    openExternalSheet({ kind: 'player', url: source.url, title: ctx.title, playInternal: webHandsOff ? undefined : () => playInternal(source, ctx) });
     return;
   }
   const app = mode !== 'internal' ? findApp(mode) : null;
