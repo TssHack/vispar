@@ -19,3 +19,24 @@ export function playableUrl(url: string): string {
   if (isDesktopApp && isHttp(url)) return `app://vispar/_media?u=${encodeURIComponent(url)}`;
   return url;
 }
+
+/**
+ * On an HTTPS page, checks whether the same file is also served over HTTPS. If the host answers
+ * (valid certificate), the https:// URL can be played in the browser; otherwise returns null.
+ */
+export async function upgradeToHttps(url: string): Promise<string | null> {
+  if (!isHttp(url)) return null;
+  const https = url.replace(/^http:/i, 'https:');
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 6000);
+  try {
+    await fetch(https, { method: 'HEAD', mode: 'no-cors', signal: ctrl.signal });
+    return https;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export { explainPlaybackError, type PlaybackHint } from './playbackError';

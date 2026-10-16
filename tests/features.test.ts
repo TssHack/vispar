@@ -153,3 +153,16 @@ describe('settings migration (v2.1 options)', () => {
     expect(migrateSettings({ videoFit: 'zoom' }).videoFit).toBe(DEFAULT_SETTINGS.videoFit);
   });
 });
+
+import { explainPlaybackError } from '@/lib/playbackError';
+
+describe('explainPlaybackError', () => {
+  it('names the usual causes', () => {
+    expect(explainPlaybackError('CLEARTEXT communication to x not permitted').title).toMatch(/HTTP/);
+    expect(explainPlaybackError('java.net.SocketTimeoutException: timeout').title).toMatch(/سرور/);
+    expect(explainPlaybackError('Response code: 403').title).toMatch(/اجازه/);
+    expect(explainPlaybackError('Response code: 404').title).toMatch(/پیدا نشد/);
+    expect(explainPlaybackError('MediaCodecVideoRenderer error, format=hevc').title).toMatch(/کدک/);
+    expect(explainPlaybackError(undefined).title).toMatch(/ممکن نشد/);
+  });
+});

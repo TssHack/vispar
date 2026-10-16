@@ -19,7 +19,8 @@ import { Text } from '@/components/Text';
 import { toast } from '@/components/Toast';
 import { download, playInternal } from '@/external/actions';
 import { copyLink } from '@/external/launch';
-import { isBlockedByBrowser, playableUrl } from '@/lib/media';
+import * as Clipboard from 'expo-clipboard';
+import { explainPlaybackError, isBlockedByBrowser, playableUrl, upgradeToHttps } from '@/lib/media';
 import { openExternalSheet } from '@/external/sheet';
 import { useLayout } from '@/hooks/useLayout';
 import { useRemote } from '@/hooks/useRemote';
@@ -129,13 +130,17 @@ export default function PlayerScreen() {
   });
 
   // Load `current` into the player whenever it changes (first resolve, or a quality switch).
-  const loadedUrl = useRef<string | null>(fallbackSource?.url ?? null);
+  const loadedUrl = useRef<string | null>(fallbackSource && !isBlockedByBrowser(fallbackSource.url) ? fallbackSource.url : null);
+  // HTTPS page + http file: first see whether the host also serves the file over https.
+  const [httpsOf, setHttpsOf] = useState<Record<string, string | false>>({});
   const pendingSeek = useRef<number | null>(null);
   useEffect(() => {
-    if (!current || loadedUrl.current === current.url || isBlockedByBrowser(current.url)) return;
+    if (!current || loadedUrl.current === current.url) return;
+    const upgraded = httpsOf[current.url];
+    if (isBlockedByBrowser(current.url) && !upgraded) return;
     loadedUrl.current = current.url;
     player
-      .replaceAsync({ uri: playableUrl(current.url), metadata: { title, artist: ctx.subtitle || undefined } })
+      .replaceAsync({ uri: playableUrl(upgraded || current.url), metadata: { title, artist: ctx.subtitle || undefined } })
       .then(() => {
         if (pendingSeek.current !== null) {
           player.currentTime = pendingSeek.current;
@@ -144,7 +149,12 @@ export default function PlayerScreen() {
         player.play();
       })
       .catch(() => toast('بارگذاری ویدیو ممکن نشد', 'alert'));
-  }, [current, player, title, ctx.subtitle]);
+  }, [current, player, title, ctx.subtitle, httpsOf]);
+  useEffect(() => {
+    if (!current || !isBlockedByBrowser(current.url) || current.url in httpsOf) return;
+    const url = current.url;
+    upgradeToHttps(url).then((u) => setHttpsOf((m) => ({ ...m, [url]: u ?? false })));
+  }, [current, httpsOf]);
 
   const { status, error } = useEvent(player, 'statusChange', { status: player.status });
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
@@ -367,7 +377,8 @@ export default function PlayerScreen() {
   const resolving = !current && type === 'serie' && sIdx !== undefined && !ctx.episode;
   if (!current && !sources.length && !resolving) return <NotFound title="لینک پخش نامعتبر است" body="دوباره از صفحه‌ی فیلم امتحان کنید." />;
 
-  const blocked = !!current && isBlockedByBrowser(current.url);
+  const blocked = !!current && isBlockedByBrowser(current.url) && !httpsOf[current.url];
+  const checkingHttps = !!current && isBlockedByBrowser(current.url) && !(current.url in httpsOf);
   const big = isTV || isWide;
   const side = Math.max(insets.left, insets.right, 16);
   const top = Math.max(insets.top, 12);
@@ -393,7 +404,7 @@ export default function PlayerScreen() {
         </View>
       ) : null}
 
-      {(status === 'loading' && !blocked) || resolving ? (
+      {(status === 'loading' && !blocked) || resolving || checkingHttps ? (
         <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -565,7 +576,7 @@ export default function PlayerScreen() {
       ) : null}
 
       {/* HTTPS page + plain-HTTP media: the browser refuses to load it, so explain and offer the way out */}
-      {blocked && current ? (
+      {blocked && !checkingHttps && current ? (
         <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: '#000' }}>
           <Icon name="alert" size={36} color="#F4F1EA" />
           <Text size={17} weight={800} color="#F4F1EA" align="center">
@@ -585,13 +596,25 @@ export default function PlayerScreen() {
 
       {/* Error */}
       {status === 'error' && !blocked ? (
-        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: 'rgba(0,0,0,0.88)' }}>
+        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: 'rgba(0,0,0,0.9)' }}>
           <Icon name="alert" size={36} color="#F4F1EA" />
-          <Text size={16} weight={800} color="#F4F1EA" align="center">
-            پخش این فایل ممکن نشد
-          </Text>
-          <Text size={13} color="#C9C5D3" align="center">
-            {Platform.OS === 'web' ? 'مرورگر شما از این فرمت پشتیبانی نمی‌کند.' : (error?.message ?? 'اتصال یا فرمت فایل را بررسی کنید.')}
+          {(() => {
+            const hint = explainPlaybackError(error?.message);
+            return (
+              <>
+                <Text size={17} weight={800} color="#F4F1EA" align="center">
+                  {hint.title}
+                </Text>
+                <Text size={13} color="#C9C5D3" align="center" style={{ maxWidth: 560 }}>
+                  {hint.body}
+                </Text>
+              </>
+            );
+          })()}
+          <Text size={11} color="#8E8A9E" align="center" style={{ maxWidth: 640, writingDirection: 'ltr' }} numberOfLines={4} selectable>
+            {Platform.OS === 'web' ? 'MediaError: ' : ''}
+            {error?.message ?? 'unknown error'}
+            {current ? `\n${current.url}` : ''}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
             {sources
@@ -601,6 +624,15 @@ export default function PlayerScreen() {
                 <Button key={s.url} label={`امتحان با ${s.quality}`} onPress={() => switchSource(s)} hasTVPreferredFocus={isTV} />
               ))}
             {current ? <Button label="پخش با پلیر دیگر" variant="onImage" icon="external" onPress={() => openExternalSheet({ kind: 'player', url: current.url, title })} /> : null}
+            <Button
+              label="کپی جزئیات خطا"
+              variant="onImage"
+              icon="link"
+              onPress={() => {
+                void Clipboard.setStringAsync(`Vispar ${Platform.OS}\n${error?.message ?? ''}\n${current?.url ?? ''}`);
+                toast('جزئیات خطا کپی شد', 'check');
+              }}
+            />
             <Button label="بازگشت" variant="onImage" onPress={goBack} />
           </View>
         </View>
