@@ -3,11 +3,13 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ToastHost } from '@/components/Toast';
+import { BootScreen, OfflineBanner } from '@/components/BootScreen';
+import { toast, ToastHost } from '@/components/Toast';
+import { checkConnection, startMonitor, useNetStatus } from '@/net/connectivity';
 import { ExternalSheetHost } from '@/external/ExternalSheet';
 import { fontFiles } from '@/theme/fonts';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
@@ -20,12 +22,42 @@ function Shell() {
   const { colors, name, ready } = useTheme();
   const [fontsLoaded, fontError] = useFonts(fontFiles);
   const done = (fontsLoaded || !!fontError) && ready;
+  const net = useNetStatus();
+  const [minShown, setMinShown] = useState(false);
+  const [offlineOk, setOfflineOk] = useState(false);
+  const wasDown = useRef(false);
 
   useEffect(() => {
-    if (done) SplashScreen.hideAsync().catch(() => {});
+    if (!done) return;
+    SplashScreen.hideAsync().catch(() => {});
+    startMonitor();
+    void checkConnection();
+    const t = setTimeout(() => setMinShown(true), 1100);
+    return () => clearTimeout(t);
   }, [done]);
 
+  useEffect(() => {
+    if (net === 'online' && wasDown.current) {
+      wasDown.current = false;
+      toast('اتصال برقرار شد', 'check');
+    } else if (net === 'offline' || net === 'server') wasDown.current = true;
+  }, [net]);
+
   if (!done) return null;
+
+  const booting = !minShown || net === 'checking';
+  if (booting || ((net === 'offline' || net === 'server') && !offlineOk)) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <StatusBar style={name === 'dark' ? 'light' : 'dark'} />
+        <BootScreen
+          status={booting ? 'checking' : (net as 'offline' | 'server')}
+          onRetry={() => void checkConnection()}
+          onContinue={() => setOfflineOk(true)}
+        />
+      </View>
+    );
+  }
 
   return (
     <View
@@ -45,6 +77,7 @@ function Shell() {
         <Stack.Screen name="series/[id]" />
         <Stack.Screen name="player" options={{ animation: 'fade', presentation: 'fullScreenModal' }} />
       </Stack>
+      <OfflineBanner status={net} onRetry={() => void checkConnection()} />
       <UpdateSheet />
       <OtaBanner />
       <ExternalSheetHost />

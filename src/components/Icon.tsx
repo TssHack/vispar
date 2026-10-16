@@ -43,7 +43,12 @@ export type IconName =
   | 'pip'
   | 'library'
   | 'palette'
-  | 'link';
+  | 'link'
+  | 'wifiOff'
+  | 'bell'
+  | 'plus'
+  | 'desktop'
+  | 'info';
 
 type Props = { name: IconName; size?: number; color?: keyof Palette | (string & {}); strokeWidth?: number };
 
@@ -93,6 +98,32 @@ export function Icon({ name, size = 22, color = 'text', strokeWidth = 1.8 }: Pro
       case 'back':
         // RTL: "back" points to the right.
         return <Path {...stroke} d="M5 12h14m-6-6 6 6-6 6" />;
+      case 'wifiOff':
+        return (
+          <>
+            <Path {...stroke} d="M2 2l20 20M8.5 16.4a5 5 0 0 1 7 0M5 12.9a10 10 0 0 1 3.2-2.1M10.7 5.1A15 15 0 0 1 22 9M2 9a15 15 0 0 1 4-2.7" />
+            <Circle cx={12} cy={20} r={1.2} fill={c} />
+          </>
+        );
+      case 'bell':
+        return <Path {...stroke} d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9M10 20a2 2 0 0 0 4 0" />;
+      case 'plus':
+        return <Path {...stroke} d="M12 5v14M5 12h14" />;
+      case 'desktop':
+        return (
+          <>
+            <Rect {...stroke} x={2.5} y={4} width={19} height={12} rx={2} />
+            <Path {...stroke} d="M8 20h8M12 16v4" />
+          </>
+        );
+      case 'info':
+        return (
+          <>
+            <Circle {...stroke} cx={12} cy={12} r={9} />
+            <Path {...stroke} d="M12 11v5.5" />
+            <Circle cx={12} cy={7.7} r={1.1} fill={c} />
+          </>
+        );
       case 'share':
         return <Path {...stroke} d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6" />;
       case 'close':
