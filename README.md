@@ -97,13 +97,20 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 | --- | --- |
 | Android | `Vispar-*-android.apk` from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
 | Android TV | `Vispar-*-android-tv.apk` from Releases (leanback launcher, banner and D-pad focus). Built with the `react-native-tvos` fork |
-| iOS | Open the web app in Safari and follow the in-app *Add to Home Screen* guide, or build with Xcode / EAS |
+| iOS | **Simulator:** `Vispar-*-ios-simulator.zip`. **iPhone / iPad:** `Vispar-*-ios-unsigned.ipa` (unsigned, see below). Or open the web app in Safari and follow the in-app *Add to Home Screen* guide |
 | Web / PWA | [vispar.ehsanfazli.ir](https://vispar.ehsanfazli.ir), or `npm run build:web` and host the `dist/` folder (`vercel.json` is included) |
 | Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
 | macOS | `Vispar-*-mac-*.dmg` |
 | Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
 
 Both APKs are built on GitHub's runners by the **Android builds** workflow (`.github/workflows/android.yml`, no EAS account needed). They are signed with the standard debug key, so they install directly but are not meant for the Play Store. Install the TV APK from a USB drive or with `adb install`. For emulators and Chromebooks there are smaller `-x86_64` APKs (`Vispar-*-android-x86_64.apk`, `Vispar-*-android-tv-x86_64.apk`).
+
+### iOS builds
+
+The **iOS builds** workflow (`.github/workflows/ios.yml`) produces two files on a macOS runner, with no secrets needed:
+
+- `Vispar-*-ios-simulator.zip`: the app for the iOS Simulator (arm64 and Intel). Unzip it and drag `Vispar.app` onto a running Simulator, or run `xcrun simctl install booted Vispar.app` and `xcrun simctl launch booted com.fazli.vispar`.
+- `Vispar-*-ios-unsigned.ipa`: iPhone and iPad build. **It is not signed**, because Apple only installs signed apps. Re-sign and install it with AltStore, Sideloadly (free Apple ID, valid 7 days) or your own certificate and provisioning profile. It is not a TestFlight or App Store build.
 
 The desktop builds are produced by the **Desktop builds** workflow (`.github/workflows/desktop.yml`). Push a `v*` tag and the installers are attached to the release automatically.
 
@@ -166,7 +173,7 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 | --- | --- |
 | Android | `Vispar-*-android.apk` from [Releases](https://github.com/TssHack/vispar/releases/latest), or `npm run android` |
 | Android TV | `Vispar-*-android-tv.apk` from Releases (leanback launcher, banner and D-pad focus). Built with the `react-native-tvos` fork |
-| iOS | Open the web app in Safari and follow the in-app *Add to Home Screen* guide, or build with Xcode / EAS |
+| iOS | **Simulator:** `Vispar-*-ios-simulator.zip`. **iPhone / iPad:** `Vispar-*-ios-unsigned.ipa` (unsigned, see below). Or open the web app in Safari and follow the in-app *Add to Home Screen* guide |
 | Web / PWA | [vispar.ehsanfazli.ir](https://vispar.ehsanfazli.ir), or `npm run build:web` and host the `dist/` folder (`vercel.json` is included) |
 | Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
 | macOS | `Vispar-*-mac-*.dmg` |

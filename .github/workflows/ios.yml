@@ -1,0 +1,101 @@
+name: iOS builds
+
+# Builds the iOS Simulator app and an UNSIGNED device IPA (iPhone and iPad) on a macOS runner.
+# Run it by hand (optionally naming a release tag to attach the files to), push a v* tag, or change
+# this file in a pull request to verify the pipeline. No secrets are needed.
+#
+# The IPA is unsigned: Apple only installs signed apps. Re-sign it with AltStore, Sideloadly or your
+# own certificate and provisioning profile to put it on a device.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to attach the files to (leave empty to only keep them as artifacts)
+        required: false
+        type: string
+  push:
+    tags: ['v*']
+  pull_request:
+    paths: ['.github/workflows/ios.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Generate the native iOS project
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Find workspace and scheme
+        id: proj
+        run: |
+          WS=$(ls -d ios/*.xcworkspace | head -1)
+          SCHEME=$(basename "$WS" .xcworkspace)
+          echo "ws=$WS" >> "$GITHUB_OUTPUT"
+          echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./app.json').expo.version")" >> "$GITHUB_OUTPUT"
+          xcodebuild -version
+          xcodebuild -list -workspace "$WS" | head -30
+
+      - name: Build for the iOS Simulator (arm64 + x86_64)
+        run: |
+          set -o pipefail
+          xcodebuild -workspace "${{ steps.proj.outputs.ws }}" -scheme "${{ steps.proj.outputs.scheme }}" \
+            -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build | tail -n 40
+
+      - name: Build for devices (iPhone and iPad), unsigned
+        run: |
+          set -o pipefail
+          xcodebuild -workspace "${{ steps.proj.outputs.ws }}" -scheme "${{ steps.proj.outputs.scheme }}" \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build/device \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build | tail -n 40
+
+      - name: Package
+        run: |
+          VERSION="${{ steps.proj.outputs.version }}"
+          mkdir -p out
+          SIM_APP=$(find build/sim/Build/Products/Release-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
+          DEV_APP=$(find build/device/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          echo "simulator app: $SIM_APP"
+          echo "device app:    $DEV_APP"
+
+          # Simulator: the .app zipped (ditto keeps symlinks and permissions).
+          ditto -c -k --sequesterRsrc --keepParent "$SIM_APP" "out/Vispar-${VERSION}-ios-simulator.zip"
+
+          # Device: an IPA is a zip with Payload/<name>.app inside.
+          rm -rf Payload && mkdir Payload
+          cp -R "$DEV_APP" Payload/
+          zip -qry "out/Vispar-${VERSION}-ios-unsigned.ipa" Payload
+
+          echo "--- device app Info.plist"
+          plutil -p "$DEV_APP/Info.plist" | grep -E "CFBundleIdentifier|CFBundleShortVersionString|UIDeviceFamily|MinimumOSVersion|CFBundleExecutable" -A2 | head -20
+          echo "--- architectures"
+          lipo -info "$SIM_APP/$(plutil -extract CFBundleExecutable raw "$SIM_APP/Info.plist")"
+          lipo -info "$DEV_APP/$(plutil -extract CFBundleExecutable raw "$DEV_APP/Info.plist")"
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vispar-ios
+          path: out/*
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          files: out/*
