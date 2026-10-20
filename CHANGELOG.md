@@ -2,6 +2,12 @@
 
 All notable changes to Vispar. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
+## [Unreleased]
+
+### Added
+
+- **iOS builds** ([#7](https://github.com/TssHack/vispar/issues/7)): a CI workflow that builds the iOS Simulator app (`Vispar-<version>-ios-simulator.zip`) and an unsigned iPhone/iPad IPA (`Vispar-<version>-ios-unsigned.ipa`) and attaches them to a release. The IPA must be re-signed (AltStore, Sideloadly, or your own certificate) to install on a device.
+
 ## [2.3.0] - 2026-10-20
 
 ### Added
