@@ -5,6 +5,9 @@ export type Density = 'compact' | 'normal' | 'large';
 export type QualityPref = 'best' | '2160' | '1080' | '720' | '480';
 export type DigitStyle = 'fa' | 'en';
 export type VideoFit = 'contain' | 'cover' | 'fill';
+export type SubtitleSize = 'sm' | 'md' | 'lg';
+export type SubtitleBackground = 'none' | 'soft' | 'solid';
+export type SubtitleLanguage = 'auto' | 'fa' | 'en';
 
 /** 'internal' = Vispar's player, 'ask' = show the chooser every time, otherwise an external app id. */
 export type PlayerMode = 'internal' | 'ask' | (string & {});
@@ -41,6 +44,14 @@ export type Settings = {
   notifyNewContent: boolean;
   /** Local alert when a series in my list gets new episodes. */
   notifyEpisodes: boolean;
+  /** Subtitles shown by default when a track exists. */
+  subtitlesEnabled: boolean;
+  /** Which track to prefer automatically. `auto` takes the first one the file offers. */
+  subtitleLanguage: SubtitleLanguage;
+  subtitleSize: SubtitleSize;
+  subtitleBackground: SubtitleBackground;
+  /** Look for `<same-name>.srt` next to the video when the file has no embedded track. */
+  subtitleAutoProbe: boolean;
   home: HomeSections;
 };
 
@@ -60,6 +71,11 @@ export const DEFAULT_SETTINGS: Settings = {
   heroAuto: true,
   notifyNewContent: false,
   notifyEpisodes: true,
+  subtitlesEnabled: true,
+  subtitleLanguage: 'fa',
+  subtitleSize: 'md',
+  subtitleBackground: 'soft',
+  subtitleAutoProbe: true,
   home: { continueWatching: true, myList: true, topRated: true, movies: true, series: true, genres: true },
 };
 
@@ -70,6 +86,13 @@ export function migrateSettings(saved: unknown): Settings {
   if (s.externalPlayer === true && !('playerMode' in s)) out.playerMode = 'ask';
   if (![10, 15, 30].includes(out.skipSeconds)) out.skipSeconds = 10;
   if (!['contain', 'cover', 'fill'].includes(out.videoFit)) out.videoFit = 'contain';
+  // Subtitle settings arrived in 2.3; an older blob has none of them, and a hand-edited or corrupt
+  // value must fall back rather than reach the renderer.
+  if (typeof out.subtitlesEnabled !== 'boolean') out.subtitlesEnabled = DEFAULT_SETTINGS.subtitlesEnabled;
+  if (!['auto', 'fa', 'en'].includes(out.subtitleLanguage)) out.subtitleLanguage = DEFAULT_SETTINGS.subtitleLanguage;
+  if (!['sm', 'md', 'lg'].includes(out.subtitleSize)) out.subtitleSize = DEFAULT_SETTINGS.subtitleSize;
+  if (!['none', 'soft', 'solid'].includes(out.subtitleBackground)) out.subtitleBackground = DEFAULT_SETTINGS.subtitleBackground;
+  if (typeof out.subtitleAutoProbe !== 'boolean') out.subtitleAutoProbe = DEFAULT_SETTINGS.subtitleAutoProbe;
   return out;
 }
 

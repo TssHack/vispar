@@ -18,7 +18,7 @@ import { detectStandalone, openInstallGuide, promptInstall, useInstallKind } fro
 import { clearFavorites, clearHistory } from '@/library/store';
 import { confirm } from '@/lib/confirm';
 import { faNum, faVersion } from '@/lib/format';
-import { setHomeSection, setSetting, settingsStore, type AccentName, type HomeSections } from '@/settings/store';
+import { setHomeSection, setSetting, settingsStore, type AccentName, type HomeSections, type SubtitleBackground, type SubtitleSize } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
 import { accents, type ThemePreference } from '@/theme/tokens';
 import { useUpdates } from '@/update/UpdateProvider';
@@ -75,8 +75,31 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function Toggle({ label, hint, value, onChange }: { label: string; hint?: string; value: boolean; onChange: (v: boolean) => void }) {
+/** Live sample of the subtitle styling, so the choice is made by eye rather than by name. */
+function SubtitlePreview({ size, background }: { size: SubtitleSize; background: SubtitleBackground }) {
   const { colors } = useTheme();
+  const fontSize = { sm: 14, md: 18, lg: 24 }[size];
+  const bg = { none: 'transparent', soft: 'rgba(8,8,12,0.55)', solid: 'rgba(8,8,12,0.86)' }[background];
+  return (
+    <View style={{ gap: 6 }}>
+      <Text size={12} color="muted">
+        پیش‌نمایش
+      </Text>
+      <View style={{ borderRadius: 14, overflow: 'hidden', backgroundColor: '#1A1A24', borderWidth: 1, borderColor: colors.line }}>
+        {/* A stand-in for the picture behind the text: mid-grey, so contrast is judged honestly. */}
+        <View style={{ height: 96, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 12, backgroundColor: '#2A2A33' }}>
+          <View style={{ backgroundColor: bg, borderRadius: background === 'none' ? 0 : 10, paddingHorizontal: background === 'none' ? 0 : 12, paddingVertical: background === 'none' ? 0 : 4 }}>
+            <Text size={fontSize} weight={600} color="#FFFFFF" align="center" style={{ writingDirection: 'rtl' }}>
+              نمونه‌ی متن زیرنویس
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function Toggle({ label, hint, value, onChange }: { label: string; hint?: string; value: boolean; onChange: (v: boolean) => void }) {  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44, gap: 12 }}>
       <View style={{ flex: 1 }}>
@@ -332,6 +355,32 @@ export default function Settings() {
         </Field>
         <Toggle label="پخش خودکار قسمت بعد" value={s.autoplayNext} onChange={(v) => setSetting('autoplayNext', v)} />
         <Toggle label="ادامه از جای قبلی بدون پرسش" value={s.autoResume} onChange={(v) => setSetting('autoResume', v)} />
+      </Section>
+
+      <Section title="زیرنویس" icon="subtitles">
+        <Toggle label="نمایش زیرنویس" hint="وقتی فایل زیرنویس دارد، خودکار روشن می‌شود" value={s.subtitlesEnabled} onChange={(v) => setSetting('subtitlesEnabled', v)} />
+        <Field label="زبان ترجیحی" hint="اگر این زبان نبود، اولین زیرنویس موجود انتخاب می‌شود">
+          <Chip label="فارسی" selected={s.subtitleLanguage === 'fa'} onPress={() => setSetting('subtitleLanguage', 'fa')} />
+          <Chip label="انگلیسی" selected={s.subtitleLanguage === 'en'} onPress={() => setSetting('subtitleLanguage', 'en')} />
+          <Chip label="خودکار" selected={s.subtitleLanguage === 'auto'} onPress={() => setSetting('subtitleLanguage', 'auto')} />
+        </Field>
+        <Field label="اندازه‌ی متن">
+          <Chip label="کوچک" selected={s.subtitleSize === 'sm'} onPress={() => setSetting('subtitleSize', 'sm')} />
+          <Chip label="معمولی" selected={s.subtitleSize === 'md'} onPress={() => setSetting('subtitleSize', 'md')} />
+          <Chip label="بزرگ" selected={s.subtitleSize === 'lg'} onPress={() => setSetting('subtitleSize', 'lg')} />
+        </Field>
+        <Field label="پس‌زمینه" hint="پس‌زمینه‌ی نیمه‌شفاف، متن را روی صحنه‌های روشن خوانا نگه می‌دارد">
+          <Chip label="بدون" selected={s.subtitleBackground === 'none'} onPress={() => setSetting('subtitleBackground', 'none')} />
+          <Chip label="نیمه‌شفاف" selected={s.subtitleBackground === 'soft'} onPress={() => setSetting('subtitleBackground', 'soft')} />
+          <Chip label="تیره" selected={s.subtitleBackground === 'solid'} onPress={() => setSetting('subtitleBackground', 'solid')} />
+        </Field>
+        <Toggle
+          label="جستجوی خودکار فایل زیرنویس"
+          hint="کنار ویدیو دنبال هم‌نام .srt یا .vtt می‌گردد"
+          value={s.subtitleAutoProbe}
+          onChange={(v) => setSetting('subtitleAutoProbe', v)}
+        />
+        <SubtitlePreview size={s.subtitleSize} background={s.subtitleBackground} />
       </Section>
 
       {native && !isTV ? (
