@@ -148,9 +148,9 @@ describe('sidecar candidates', () => {
   it('replaces the extension and prefers Persian names', () => {
     expect(sidecarCandidates('http://x.test/a/Movie.2024.1080p.mkv')).toEqual([
       'http://x.test/a/Movie.2024.1080p.fa.srt',
+      'http://x.test/a/Movie.2024.1080p.srt',
       'http://x.test/a/Movie.2024.1080p.persian.srt',
       'http://x.test/a/Movie.2024.1080p.fa.vtt',
-      'http://x.test/a/Movie.2024.1080p.srt',
       'http://x.test/a/Movie.2024.1080p.vtt',
     ]);
   });

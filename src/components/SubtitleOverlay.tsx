@@ -51,9 +51,8 @@ export function SubtitleOverlay({ cues, time, offsetMs, style, bottomInset, scal
   return (
     <View
       pointerEvents="none"
-      // Announced for screen readers without flooding them: the live region is on the container, and
-      // the text itself is not focusable.
-      accessibilityLiveRegion="polite"
+      // Not a live region: subtitles repeat the audio, and announcing every cue would talk over it.
+      accessibilityLiveRegion="none"
       style={{
         position: 'absolute',
         left: 0,

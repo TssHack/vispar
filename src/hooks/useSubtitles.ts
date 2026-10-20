@@ -4,7 +4,8 @@ import { Platform } from 'react-native';
 import type { Source } from '@/api/types';
 import { getSubtitleChoice, setSubtitleChoice, useSubtitleChoice } from '@/lib/subtitles/store';
 import { loadSubtitle, probeSidecar } from '@/lib/subtitles/load';
-import { subtitleHint, type Cue } from '@/lib/subtitles/parse';
+import { type Cue } from '@/lib/subtitles/parse';
+import { planSidecar } from '@/lib/subtitles/plan';
 import { useSetting } from '@/settings/store';
 
 /**
@@ -40,6 +41,8 @@ export type SubtitleState = {
   /** Try the conventional sidecar names next to the video. */
   probe: () => void;
   setOffset: (offsetMs: number) => void;
+  /** Undo "off for this title" and look for a sidecar again. */
+  turnOn: () => void;
 };
 
 export function useSubtitles(options: {
@@ -61,9 +64,25 @@ export function useSubtitles(options: {
   const [sidecarUrl, setSidecarUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<SubtitleState['status']>('idle');
   const [offsetMs, setOffsetState] = useState<number>(saved.offsetMs ?? 0);
+  const [activeTrack, setActiveTrack] = useState<string | null>(null);
 
-  // Re-read the per-title choice when the key changes; the hook survives quality switches.
+  // Bumped on every new request and on every title change, so a slow response for a superseded
+  // request is dropped instead of overwriting the current state.
+  const request = useRef(0);
+  const probedFor = useRef<string | null>(null);
+  const autoSelected = useRef<string | null>(null);
+
+  // The hook survives quality switches AND episode changes (the next-episode button replaces the
+  // route with the same screen), so everything that belongs to one title is reset when the key
+  // changes. Otherwise the previous episode's cues keep showing when the new one has none.
   useEffect(() => {
+    request.current++;
+    probedFor.current = null;
+    autoSelected.current = null;
+    setCues([]);
+    setSidecarUrl(null);
+    setStatus('idle');
+    setActiveTrack(null);
     setOffsetState(getSubtitleChoice(key ?? '').offsetMs ?? 0);
   }, [key]);
 
@@ -89,8 +108,6 @@ export function useSubtitles(options: {
     syncTracks();
   }, [syncTracks, source?.url]);
 
-  const [activeTrack, setActiveTrack] = useState<string | null>(null);
-
   /** Picks the track matching the user's language preference, or the first one. */
   const bestTrack = useMemo(() => {
     if (!tracks.length) return null;
@@ -114,7 +131,6 @@ export function useSubtitles(options: {
 
   // Default selection once per source: only when enabled, only on native, and never over the user's
   // explicit "off" for this title.
-  const autoSelected = useRef<string | null>(null);
   useEffect(() => {
     if (!NATIVE_TRACKS || !enabled || !bestTrack || !source?.url) return;
     if (autoSelected.current === source.url) return;
@@ -125,8 +141,10 @@ export function useSubtitles(options: {
 
   const loadFromUrl = useCallback(
     async (url: string) => {
+      const mine = ++request.current;
       setStatus('loading');
       const result = await loadSubtitle(url);
+      if (mine !== request.current) return false; // superseded by a newer request or a title change
       if (!result.ok) {
         setStatus('missing');
         return false;
@@ -144,44 +162,46 @@ export function useSubtitles(options: {
    * Sidecar discovery. Skipped when the file is known to have burned-in subtitles (overlaying text
    * would double it), and skipped on native when an embedded track already covers the case.
    */
-  const probedFor = useRef<string | null>(null);
   const probe = useCallback(() => {
-    if (!source?.url || !enabled) return;
-    if (subtitleHint(source) === 'hard') {
+    const action = planSidecar({ source, enabled, autoProbe, hasEmbeddedTracks: NATIVE_TRACKS && tracks.length > 0, saved, probedFor: probedFor.current });
+    if (action === 'disabled') {
       setStatus('disabled');
-      return;
-    }
-    if (saved.url) {
+    } else if (action === 'load-saved' && saved.url) {
       void loadFromUrl(saved.url);
-      return;
+    } else if (action === 'probe' && source?.url) {
+      probedFor.current = source.url;
+      const mine = ++request.current;
+      setStatus('loading');
+      void probeSidecar(source.url).then((result) => {
+        if (mine !== request.current) return;
+        if (result.ok) {
+          setCues(result.cues);
+          setSidecarUrl(result.url);
+          setStatus('ready');
+        } else {
+          setStatus('missing');
+        }
+      });
     }
-    if (!autoProbe || probedFor.current === source.url) return;
-    // An embedded track is strictly better than a guess at a sidecar name: skip the network when the
-    // container already provides subtitles.
-    if (NATIVE_TRACKS && tracks.length) return;
-    probedFor.current = source.url;
-    setStatus('loading');
-    void probeSidecar(source.url).then((result) => {
-      if (result.ok) {
-        setCues(result.cues);
-        setSidecarUrl(result.url);
-        setStatus('ready');
-      } else {
-        setStatus('missing');
-      }
-    });
-  }, [source, enabled, autoProbe, tracks.length, saved.url, loadFromUrl]);
+  }, [source, enabled, autoProbe, tracks.length, saved, loadFromUrl]);
 
   // Keyed on the source URL, not on `probe`: depending on the callback would re-run whenever the
   // track list settles, which is exactly the moment we do not want another network request.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => probe(), [source?.url, enabled, autoProbe, saved.url, tracks.length]);
+  useEffect(() => probe(), [source?.url, enabled, autoProbe, saved.url, saved.off, tracks.length]);
 
   const setSidecarOff = useCallback(() => {
+    request.current++; // cancel anything still loading
     setCues([]);
     setSidecarUrl(null);
     setStatus('disabled');
     if (key) setSubtitleChoice(key, { off: true, url: undefined });
+  }, [key]);
+
+  const turnOn = useCallback(() => {
+    probedFor.current = null;
+    if (key) setSubtitleChoice(key, { off: false });
+    setStatus('idle');
   }, [key]);
 
   const setOffset = useCallback(
@@ -207,5 +227,6 @@ export function useSubtitles(options: {
     loadFromUrl,
     probe,
     setOffset,
+    turnOn,
   };
 }
