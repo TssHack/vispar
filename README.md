@@ -39,7 +39,7 @@ Vispar is a Persian-first (right-to-left) streaming client. It is built to feel 
 | | |
 | --- | --- |
 | **Splash with a connection test** | The logo draws itself while two real checks run: the internet, then the content server. If either fails you get a clear page with *Retry* and *Continue offline* (your library still works). A banner appears if the connection drops later and clears itself when it returns. |
-| **A real player** | Seek bar, ±10/15/30 s skip, double-tap to seek, playback speed, in-player quality switch, fit/fill/stretch, resume where you left off, autoplay next episode, background playback and picture-in-picture. |
+| **A real player** | Subtitles (embedded tracks and `.srt`/`.vtt` files, Persian-first, with sync and styling), seek bar, ±10/15/30 s skip, double-tap to seek, playback speed, in-player quality switch, fit/fill/stretch, resume where you left off, autoplay next episode, background playback and picture-in-picture. |
 | **External players and downloaders** | VLC, MX Player, mpv, Just Player, Kodi, KMPlayer, XPlayer, nPlayer, Infuse, Outplayer; ADM, 1DM, FDM, system download manager. Installed apps are detected on Android. On the web an `.m3u` playlist is generated. |
 | **Discovery** | Home slider, continue watching, my list, top rated, genre rails, multi-filter (genre, decade, country, IMDb, quality), sorting, search and similar titles. |
 | **Library** | My list, continue watching and full history, stored on the device. |

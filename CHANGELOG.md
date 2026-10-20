@@ -2,7 +2,11 @@
 
 All notable changes to Vispar. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses semantic versioning.
 
-## [Unreleased]
+## [2.3.0] - 2026-10-20
+
+### Added
+
+- **Subtitles in the built-in player** ([#3](https://github.com/TssHack/vispar/pull/3)): embedded tracks on Android/iOS, sidecar `.srt`/`.vtt` files on every platform, Persian-first language choice, size and background settings with a live preview, per-title choice and a sync offset.
 
 ### Fixed — subtitles review ([#4](https://github.com/TssHack/vispar/issues/4))
 
@@ -27,7 +31,7 @@ The subtitles feature from [#3](https://github.com/TssHack/vispar/pull/3) shippe
 - New `tests/subtitles-review.test.ts`: cp1256, UTF-8/UTF-16 detection, loading a cp1256 file end to end, probe order, the sidecar decision table, selector identity (the render-loop regression) and store ordering.
 - 85 tests pass.
 
-## [2.2.0]
+## [2.2.0] - 2026-10-17
 
 ### Added
 
