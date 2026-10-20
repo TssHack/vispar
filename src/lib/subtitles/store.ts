@@ -49,7 +49,10 @@ export const getSubtitleChoice = (key: string): SubtitleChoice => subtitleStore.
 
 export function setSubtitleChoice(key: string, patch: SubtitleChoice): void {
   subtitleStore.set((all) => {
-    const next: SubtitleLibrary = { ...all, [key]: { ...all[key], ...patch } };
+    // Re-insert the key so it moves to the end: object order is our only age signal, and a title that
+    // is used every day must not look like the oldest one.
+    const { [key]: previous, ...rest } = all;
+    const next: SubtitleLibrary = { ...rest, [key]: { ...previous, ...patch } };
     const keys = Object.keys(next);
     if (keys.length > MAX_ENTRIES) {
       // Keys carry no timestamp; insertion order is the closest proxy for age that we have.
@@ -59,5 +62,14 @@ export function setSubtitleChoice(key: string, patch: SubtitleChoice): void {
   });
 }
 
-export const useSubtitleChoice = (key: string | null): SubtitleChoice =>
-  subtitleStore.use((all) => (key ? (all[key] ?? {}) : {}));
+/**
+ * One shared empty value. `useSyncExternalStore` calls the selector on every render and compares the
+ * results by identity, so returning a fresh `{}` for "no saved choice" made React see a new snapshot
+ * each time and loop ("Maximum update depth exceeded", React error #185), which blanked the player.
+ */
+const NO_CHOICE: SubtitleChoice = Object.freeze({});
+
+/** The selector behind `useSubtitleChoice`; exported so the identity guarantee has a test. */
+export const selectChoice = (all: SubtitleLibrary, key: string | null): SubtitleChoice => (key ? (all[key] ?? NO_CHOICE) : NO_CHOICE);
+
+export const useSubtitleChoice = (key: string | null): SubtitleChoice => subtitleStore.use((all) => selectChoice(all, key));

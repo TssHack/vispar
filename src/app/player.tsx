@@ -31,11 +31,8 @@ import { SeekBar } from '@/player/SeekBar';
 import { usePlayContext } from '@/player/usePlayContext';
 import { SubtitleOverlay } from '@/components/SubtitleOverlay';
 import { useSubtitles } from '@/hooks/useSubtitles';
-import { subtitleKey } from '@/lib/subtitles/store';
 import { subtitleHint } from '@/lib/subtitles/parse';
-
-/** Same key shape the library uses, so a subtitle choice follows a title across screens. */
-const subtitleKeyFor = (type: ContentType, id: number, episodeId?: number) => subtitleKey(type, id, episodeId);
+import { subtitleKey } from '@/lib/subtitles/store';
 import { getSettings, useSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -174,13 +171,13 @@ export default function PlayerScreen() {
   const subtitleStyle = useSetting('subtitleSize');
   const subtitleBackground = useSetting('subtitleBackground');
   const subs = useSubtitles({
-    key: type ? subtitleKeyFor(type, id, ctx.episode?.episodeId) : null,
+    key: type ? subtitleKey(type, id, ctx.episode?.episodeId) : null,
     source: current,
     title,
     player,
   });
   /** Short label for the control bar: what the subtitle button currently shows. */
-  const subtitleLabel = !subs.cues.length && !subs.activeTrack ? 'خاموش' : subs.sidecarUrl ? 'فارسی' : subs.activeTrack ? 'روشن' : 'خاموش';
+  const subtitleLabel = !subs.cues.length && !subs.activeTrack ? 'خاموش' : subs.sidecarUrl && /\.(fa|persian|per)\.(srt|vtt)/i.test(subs.sidecarUrl) ? 'فارسی' : 'روشن';
 
   // ---------- controls visibility ----------
   const [visible, setVisible] = useState(true);
@@ -551,16 +548,19 @@ export default function PlayerScreen() {
                         }}
                       />
                     )),
-                    subs.tracks.length || subs.cues.length ? null : (
+                    subs.status === 'disabled' && current && subtitleHint(current) !== 'hard' ? (
+                      <MenuRow key="turn-on" label="روشن کردن زیرنویس" sub="دوباره دنبال فایل زیرنویس می‌گردد" onPress={() => { subs.turnOn(); setMenu(null); }} />
+                    ) : null,
+                    subs.tracks.length || subs.cues.length || subs.status === 'disabled' ? null : (
                       <MenuRow key="none" label="زیرنویسی پیدا نشد" sub="از تنظیمات یا لینک می‌توانی اضافه کنی" onPress={() => setMenu(null)} />
                     ),
                     <MenuRow
                       key="offset-down"
-                      label="عقب‌تر · ۰٫۵ ثانیه"
+                      label="زیرنویس زودتر · ۰٫۵ ثانیه"
                       sub={`فاصله‌ی فعلی: ${faNum((subs.offsetMs / 1000).toFixed(1))} ثانیه`}
                       onPress={() => subs.setOffset(subs.offsetMs - 500)}
                     />,
-                    <MenuRow key="offset-up" label="جلوتر · ۰٫۵ ثانیه" onPress={() => subs.setOffset(subs.offsetMs + 500)} />,
+                    <MenuRow key="offset-up" label="زیرنویس دیرتر · ۰٫۵ ثانیه" onPress={() => subs.setOffset(subs.offsetMs + 500)} />,
                     <MenuRow
                       key="style"
                       label="اندازه و پس‌زمینه"

@@ -1,3 +1,4 @@
+import { decodeSubtitleBytes } from './encoding';
 import { MAX_SUBTITLE_BYTES, parseSubtitles, type Cue } from './parse';
 
 /**
@@ -16,11 +17,11 @@ export type LoadResult =
 
 const TIMEOUT_MS = 8000;
 
-/** Reads at most `MAX_SUBTITLE_BYTES`, so a mislabelled video file cannot exhaust memory. */
-async function readCapped(res: Response): Promise<string | null> {
+/** Reads at most `MAX_SUBTITLE_BYTES` of raw bytes, so a mislabelled video file cannot exhaust memory. */
+async function readCapped(res: Response): Promise<Uint8Array | null> {
   if (!res.body) {
-    const text = await res.text();
-    return text.length > MAX_SUBTITLE_BYTES ? null : text;
+    const all = new Uint8Array(await res.arrayBuffer());
+    return all.byteLength > MAX_SUBTITLE_BYTES ? null : all;
   }
   const reader = res.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -44,8 +45,13 @@ async function readCapped(res: Response): Promise<string | null> {
       // already released by cancel()
     }
   }
-  const decoder = new TextDecoder('utf-8');
-  return chunks.map((chunk) => decoder.decode(chunk, { stream: true })).join('') + decoder.decode();
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
 }
 
 /** Fetches and parses one subtitle URL. Never throws. */
@@ -55,8 +61,10 @@ export async function loadSubtitle(url: string): Promise<LoadResult> {
   try {
     const res = await fetch(url, { signal: ctrl.signal, cache: 'force-cache' });
     if (!res.ok) return { ok: false, reason: 'unreachable' };
-    const text = await readCapped(res);
-    if (text === null) return { ok: false, reason: 'too-large' };
+    const bytes = await readCapped(res);
+    if (bytes === null) return { ok: false, reason: 'too-large' };
+    // Persian files are often Windows-1256, so decode by sniffing rather than assuming UTF-8.
+    const text = decodeSubtitleBytes(bytes);
     if (!text.trim()) return { ok: false, reason: 'empty' };
     const cues = parseSubtitles(text);
     return cues.length ? { ok: true, cues, url } : { ok: false, reason: 'unparseable' };
@@ -72,8 +80,8 @@ export async function loadSubtitle(url: string): Promise<LoadResult> {
 /**
  * Conventional sidecar names next to a video file.
  *
- * `Movie.2024.1080p.mkv` → `Movie.2024.1080p.fa.srt` and so on. Ordered best-first: the Persian
- * suffix before the bare name, because that is the audience this app is built for.
+ * `Movie.2024.1080p.mkv` → `Movie.2024.1080p.fa.srt` and so on. Ordered by likelihood: the Persian
+ * suffix first (this app's audience), then the bare name.
  */
 export function sidecarCandidates(videoUrl: string): string[] {
   // Drop the query and fragment before editing the extension; they belong to the video, not the
@@ -86,7 +94,9 @@ export function sidecarCandidates(videoUrl: string): string[] {
   const base = hasExtension ? withoutQuery.slice(0, dot) : withoutQuery;
 
   const names: string[] = [];
-  for (const suffix of ['.fa.srt', '.persian.srt', '.fa.vtt', '.srt', '.vtt']) names.push(`${base}${suffix}`);
+  // `.srt` is second on purpose: the default probe only tries the first two names, and the bare
+  // `Movie.srt` is the most common sidecar there is.
+  for (const suffix of ['.fa.srt', '.srt', '.persian.srt', '.fa.vtt', '.vtt']) names.push(`${base}${suffix}`);
   return names;
 }
 
