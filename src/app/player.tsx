@@ -1,7 +1,7 @@
 import { useEvent, useEventListener } from 'expo';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -29,13 +29,20 @@ import { faClock, faNum, isStreamOnly, qualityLabel } from '@/lib/format';
 import { pickSource, sortSources } from '@/lib/sources';
 import { SeekBar } from '@/player/SeekBar';
 import { usePlayContext } from '@/player/usePlayContext';
+import { SubtitleOverlay } from '@/components/SubtitleOverlay';
+import { useSubtitles } from '@/hooks/useSubtitles';
+import { subtitleKey } from '@/lib/subtitles/store';
+import { subtitleHint } from '@/lib/subtitles/parse';
+
+/** Same key shape the library uses, so a subtitle choice follows a title across screens. */
+const subtitleKeyFor = (type: ContentType, id: number, episodeId?: number) => subtitleKey(type, id, episodeId);
 import { getSettings, useSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const FIT_NEXT = { contain: 'cover', cover: 'fill', fill: 'contain' } as const;
 const FIT_LABEL = { contain: 'اصلی', cover: 'پر کردن', fill: 'کشیده' } as const;
-type Menu = null | 'quality' | 'speed' | 'more';
+type Menu = null | 'quality' | 'speed' | 'more' | 'subtitles';
 
 function CtrlButton({ icon, label, onPress, size = 48, iconSize = 24, filled }: { icon: IconName; label: string; onPress: () => void; size?: number; iconSize?: number; filled?: boolean }) {
   return (
@@ -162,6 +169,18 @@ export default function PlayerScreen() {
   const { playbackRate } = useEvent(player, 'playbackRateChange', { playbackRate: player.playbackRate, oldPlaybackRate: 1 });
   const { muted } = useEvent(player, 'mutedChange', { muted: player.muted });
   const duration = player.duration || 0;
+
+  // ---------- subtitles ----------
+  const subtitleStyle = useSetting('subtitleSize');
+  const subtitleBackground = useSetting('subtitleBackground');
+  const subs = useSubtitles({
+    key: type ? subtitleKeyFor(type, id, ctx.episode?.episodeId) : null,
+    source: current,
+    title,
+    player,
+  });
+  /** Short label for the control bar: what the subtitle button currently shows. */
+  const subtitleLabel = !subs.cues.length && !subs.activeTrack ? 'خاموش' : subs.sidecarUrl ? 'فارسی' : subs.activeTrack ? 'روشن' : 'خاموش';
 
   // ---------- controls visibility ----------
   const [visible, setVisible] = useState(true);
@@ -389,6 +408,18 @@ export default function PlayerScreen() {
       <StatusBar hidden={full} style="light" />
       <VideoView player={player} style={{ flex: 1 }} contentFit={fit} nativeControls={false} allowsPictureInPicture startsPictureInPictureAutomatically />
 
+      {/* Subtitles sit above the video and below the controls, and never take a tap. */}
+      {subs.cues.length ? (
+        <SubtitleOverlay
+          cues={subs.cues}
+          time={currentTime}
+          offsetMs={subs.offsetMs}
+          style={{ size: subtitleStyle, background: subtitleBackground }}
+          bottomInset={bottom + 96}
+          scale={isTV ? 1.35 : 1}
+        />
+      ) : null}
+
       {/* Tap surface: halves for double-tap seek */}
       <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, flexDirection: 'row', direction: 'ltr' }}>
         <Pressable accessible={false} focusable={false} style={{ flex: 1 }} onPress={() => onSurfacePress('l')} />
@@ -455,6 +486,12 @@ export default function PlayerScreen() {
               <View style={{ flex: 1 }} />
               <PillButton icon="gauge" text={faNum(`${playbackRate}x`)} label="سرعت پخش" onPress={() => setMenu(menu === 'speed' ? null : 'speed')} />
               {current ? <PillButton icon="layers" text={current.quality || 'کیفیت'} label="کیفیت" onPress={() => setMenu(menu === 'quality' ? null : 'quality')} /> : null}
+              <PillButton
+                icon="subtitles"
+                text={subtitleLabel}
+                label="زیرنویس"
+                onPress={() => setMenu(menu === 'subtitles' ? null : 'subtitles')}
+              />
               {!isTV ? <CtrlButton icon={full ? 'fullscreenExit' : 'fullscreen'} label={full ? 'خروج از تمام‌صفحه' : 'تمام‌صفحه'} onPress={toggleFull} size={44} iconSize={22} /> : null}
             </View>
           </LinearGradient>
@@ -490,7 +527,51 @@ export default function PlayerScreen() {
                     }}
                   />
                 ))
-              : menu === 'quality'
+              : menu === 'subtitles'
+                ? [
+                    <MenuRow
+                      key="off"
+                      label="خاموش"
+                      selected={!subs.cues.length && !subs.activeTrack}
+                      onPress={() => {
+                        subs.selectTrack(null);
+                        subs.setSidecarOff();
+                        setMenu(null);
+                      }}
+                    />,
+                    ...subs.tracks.map((t) => (
+                      <MenuRow
+                        key={`track-${t.id}`}
+                        label={t.label || t.language}
+                        sub={current && subtitleHint(current) === 'hard' ? 'زیرنویس داخل تصویر' : 'زیرنویس داخلی فایل'}
+                        selected={subs.activeTrack === t.id}
+                        onPress={() => {
+                          subs.selectTrack({ id: t.id, language: t.language });
+                          setMenu(null);
+                        }}
+                      />
+                    )),
+                    subs.tracks.length || subs.cues.length ? null : (
+                      <MenuRow key="none" label="زیرنویسی پیدا نشد" sub="از تنظیمات یا لینک می‌توانی اضافه کنی" onPress={() => setMenu(null)} />
+                    ),
+                    <MenuRow
+                      key="offset-down"
+                      label="عقب‌تر · ۰٫۵ ثانیه"
+                      sub={`فاصله‌ی فعلی: ${faNum((subs.offsetMs / 1000).toFixed(1))} ثانیه`}
+                      onPress={() => subs.setOffset(subs.offsetMs - 500)}
+                    />,
+                    <MenuRow key="offset-up" label="جلوتر · ۰٫۵ ثانیه" onPress={() => subs.setOffset(subs.offsetMs + 500)} />,
+                    <MenuRow
+                      key="style"
+                      label="اندازه و پس‌زمینه"
+                      sub="از تنظیمات قابل تغییر است"
+                      onPress={() => {
+                        setMenu(null);
+                        router.push('/settings');
+                      }}
+                    />,
+                  ].filter(Boolean)
+                : menu === 'quality'
                 ? sources.map((s) => (
                     <MenuRow
                       key={s.url}

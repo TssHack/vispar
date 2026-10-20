@@ -29,6 +29,7 @@ export type IconName =
   | 'fullscreenExit'
   | 'gauge'
   | 'layers'
+  | 'subtitles'
   | 'more'
   | 'bookmark'
   | 'bookmarkFilled'
@@ -192,6 +193,14 @@ export function Icon({ name, size = 22, color = 'text', strokeWidth = 1.8 }: Pro
         );
       case 'layers':
         return <Path {...stroke} d="m12 3 9 5-9 5-9-5 9-5ZM3 13l9 5 9-5" />;
+      case 'subtitles':
+        // A screen with two caption lines: reads as "text on video" at 20 px.
+        return (
+          <>
+            <Path {...stroke} d="M3 5.5h18v13H3z" />
+            <Path {...stroke} d="M6.5 11h5M6.5 14h11M14 11h3.5" />
+          </>
+        );
       case 'more':
         return (
           <>
