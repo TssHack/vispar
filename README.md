@@ -44,7 +44,7 @@ Vispar is a Persian-first (right-to-left) streaming client. It is built to feel 
 | **Discovery** | Home slider, continue watching, my list, top rated, genre rails, multi-filter (genre, decade, country, IMDb, quality), sorting, search and similar titles. |
 | **Library** | My list, continue watching and full history, stored on the device. |
 | **Personal** | System/light/dark theme, five accent colors, poster size, Persian or Latin digits, reduced motion, choose which home sections you see, default quality and player. |
-| **Notifications** | Opt in to a local alert when new movies or series appear. No push server involved. |
+| **Notifications** | Opt in to local alerts when new movies or series appear, and when a series in your list gets **new episodes**. No push server involved. |
 | **Installable web app** | A PWA with offline shell. On iPhone and iPad a step-by-step *Add to Home Screen* guide appears; on Chrome and Edge the native install prompt is used. |
 | **Updates from GitHub Releases** | Android and the desktop apps check [Releases](https://github.com/TssHack/vispar/releases), show the notes, and download the right installer for your platform. JS-only changes can ship over the air. |
 

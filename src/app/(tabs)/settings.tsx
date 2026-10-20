@@ -13,7 +13,7 @@ import { config, repoUrl } from '@/config';
 import { appsFor, detectInstalled } from '@/external/launch';
 import { useLayout } from '@/hooks/useLayout';
 import { getPermission, notificationsSupported, notifyLocal, requestPermission } from '@/notifications';
-import { checkNewContent } from '@/notifications/watcher';
+import { checkNewContent, checkNewEpisodes } from '@/notifications/watcher';
 import { detectStandalone, openInstallGuide, promptInstall, useInstallKind } from '@/pwa/install';
 import { clearFavorites, clearHistory } from '@/library/store';
 import { confirm } from '@/lib/confirm';
@@ -142,6 +142,16 @@ export default function Settings() {
     toast('اعلان‌ها فعال شد', 'bell');
     void checkNewContent(true);
   };
+  const toggleEpisodes = async (on: boolean) => {
+    if (!on) return setSetting('notifyEpisodes', false);
+    const perm = (await getPermission()) === 'granted' ? 'granted' : await requestPermission();
+    if (perm !== 'granted') {
+      toast('اجازه‌ی اعلان داده نشد. از تنظیمات دستگاه فعالش کنید.', 'alert');
+      return;
+    }
+    setSetting('notifyEpisodes', true);
+    void checkNewEpisodes(true);
+  };
   const native = Platform.OS !== 'web';
   const players = appsFor('player', { tv: isTV });
   const downloaders = appsFor('downloader');
@@ -262,6 +272,7 @@ export default function Settings() {
           {canNotify ? (
             <>
               <Toggle label="اعلان فیلم و سریال جدید" hint="وقتی عنوان تازه‌ای اضافه شد خبرتان می‌کنیم" value={s.notifyNewContent} onChange={toggleNotify} />
+              <Toggle label="اعلان قسمت جدید سریال‌های من" hint="برای سریال‌های لیست من و سریال‌هایی که در حال دیدنشان هستید؛ نیاز به روشن بودن اعلان‌ها" value={s.notifyEpisodes} onChange={toggleEpisodes} />
               {s.notifyNewContent ? (
                 <Button
                   label="ارسال اعلان آزمایشی"

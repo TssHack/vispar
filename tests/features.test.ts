@@ -183,3 +183,27 @@ describe('androidIntentUrl', () => {
     expect(androidIntentUrl('https://h/x.mp4')).not.toContain('package=');
   });
 });
+
+import { countEpisodes, diffEpisodes } from '@/notifications/episodes';
+
+describe('episode alerts', () => {
+  it('records a series the first time without announcing it', () => {
+    const { fresh, next } = diffEpisodes({}, { 7: 10 });
+    expect(fresh).toEqual([]);
+    expect(next).toEqual({ '7': 10 });
+  });
+  it('announces only series whose episode count grew', () => {
+    const { fresh, next } = diffEpisodes({ '7': 10, '8': 5 }, { 7: 12, 8: 5 });
+    expect(fresh).toEqual([{ id: 7, added: 2, total: 12 }]);
+    expect(next).toEqual({ '7': 12, '8': 5 });
+  });
+  it('never counts backwards, so a short fetch cannot cause a repeat alert', () => {
+    const first = diffEpisodes({ '7': 10 }, { 7: 6 });
+    expect(first.fresh).toEqual([]);
+    expect(first.next['7']).toBe(10);
+    expect(diffEpisodes(first.next, { 7: 10 }).fresh).toEqual([]);
+  });
+  it('sums episodes over seasons', () => {
+    expect(countEpisodes([{ episodes: [1, 2] }, { episodes: [3] }, { episodes: [] }])).toBe(3);
+  });
+});

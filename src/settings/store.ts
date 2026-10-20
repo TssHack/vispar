@@ -39,6 +39,8 @@ export type Settings = {
   heroAuto: boolean;
   /** Local alert when new movies or series show up. */
   notifyNewContent: boolean;
+  /** Local alert when a series in my list gets new episodes. */
+  notifyEpisodes: boolean;
   home: HomeSections;
 };
 
@@ -57,6 +59,7 @@ export const DEFAULT_SETTINGS: Settings = {
   videoFit: 'contain',
   heroAuto: true,
   notifyNewContent: false,
+  notifyEpisodes: true,
   home: { continueWatching: true, myList: true, topRated: true, movies: true, series: true, genres: true },
 };
 
