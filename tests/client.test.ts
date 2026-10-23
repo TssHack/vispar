@@ -60,3 +60,37 @@ describe('formatting and sources', () => {
     expect(qualityRank('4K')).toBe(2160);
   });
 });
+
+import { fetchJson as fetchJsonForNet, setNetworkFailureHandler } from '@/api/client';
+import { shouldProbe } from '@/net/connectivity-rules';
+
+describe('network failure reporting', () => {
+  const ok = async () => new Response('[]', { status: 200 });
+
+  it('reports a rejected request and a timeout, but not an HTTP error status or bad JSON', async () => {
+    let calls = 0;
+    setNetworkFailureHandler(() => void calls++);
+    await expect(fetchJsonForNet('http://x/a', { fetchImpl: (async () => { throw new TypeError('Failed to fetch'); }) as typeof fetch })).rejects.toThrow();
+    expect(calls).toBe(1);
+    await expect(fetchJsonForNet('http://x/a', { fetchImpl: (async () => new Response('no', { status: 503 })) as typeof fetch })).rejects.toThrow('HTTP 503');
+    await expect(fetchJsonForNet('http://x/a', { fetchImpl: (async () => new Response('<html>', { status: 200 })) as typeof fetch })).rejects.toThrow();
+    expect(calls).toBe(1);
+    await expect(
+      fetchJsonForNet('http://x/a', {
+        timeoutMs: 5,
+        fetchImpl: ((_u: string, init: RequestInit) => new Promise((_r, rej) => init.signal!.addEventListener('abort', () => rej(Object.assign(new Error('aborted'), { name: 'AbortError' }))))) as unknown as typeof fetch,
+      }),
+    ).rejects.toThrow('timeout');
+    expect(calls).toBe(2);
+    expect(await fetchJsonForNet('http://x/a', { fetchImpl: ok as typeof fetch })).toEqual([]);
+    expect(calls).toBe(2);
+    setNetworkFailureHandler(null);
+  });
+
+  it('probes only while online and at most once per gap', () => {
+    expect(shouldProbe('online', 100_000, 0)).toBe(true);
+    expect(shouldProbe('online', 105_000, 100_000)).toBe(false);
+    expect(shouldProbe('online', 110_000, 100_000)).toBe(true);
+    for (const s of ['offline', 'server', 'checking'] as const) expect(shouldProbe(s, 999_999, 0)).toBe(false);
+  });
+});

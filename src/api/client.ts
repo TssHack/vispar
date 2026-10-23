@@ -28,18 +28,40 @@ export function buildUrl(segments: (string | number)[], opts: { trailingSlash?: 
   return `${base}/${parts.join('/')}${opts.trailingSlash ? '/' : ''}`;
 }
 
+let onNetworkFailure: (() => void) | null = null;
+
+/**
+ * Called when a request fails because the network or the server did not answer (not for an HTTP
+ * error status: that means the server is reachable). The connection monitor uses it to re-check.
+ */
+export function setNetworkFailureHandler(handler: (() => void) | null) {
+  onNetworkFailure = handler;
+}
+
 export async function fetchJson(url: string, opts: Opts & { headers?: Record<string, string> } = {}): Promise<unknown> {
   const f = opts.fetchImpl ?? fetch;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? config.timeoutMs);
   try {
-    const res = await f(url, { signal: ctrl.signal, headers: { Accept: 'application/json', ...opts.headers } });
+    let res: Response;
+    try {
+      res = await f(url, { signal: ctrl.signal, headers: { Accept: 'application/json', ...opts.headers } });
+    } catch (e) {
+      onNetworkFailure?.();
+      if ((e as Error)?.name === 'AbortError') throw new ApiError('timeout');
+      throw new ApiError((e as Error)?.message ?? 'network');
+    }
     if (!res.ok) throw new ApiError(`HTTP ${res.status}`, res.status);
-    return await res.json();
-  } catch (e) {
-    if (e instanceof ApiError) throw e;
-    if ((e as Error)?.name === 'AbortError') throw new ApiError('timeout');
-    throw new ApiError((e as Error)?.message ?? 'network');
+    try {
+      return await res.json();
+    } catch (e) {
+      // The body stalled past the timeout, or it is not JSON: only the first says anything about the network.
+      if ((e as Error)?.name === 'AbortError') {
+        onNetworkFailure?.();
+        throw new ApiError('timeout');
+      }
+      throw new ApiError((e as Error)?.message ?? 'invalid response');
+    }
   } finally {
     clearTimeout(timer);
   }
