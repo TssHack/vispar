@@ -8,6 +8,7 @@ import { Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BootScreen, OfflineBanner } from '@/components/BootScreen';
+import { CrashScreen } from '@/components/CrashScreen';
 import { toast, ToastHost } from '@/components/Toast';
 import { onNotificationTap } from '@/notifications';
 import { startContentWatcher } from '@/notifications/watcher';
@@ -19,6 +20,11 @@ import { fontFiles } from '@/theme/fonts';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { UpdateProvider } from '@/update/UpdateProvider';
 import { OtaBanner, UpdateSheet } from '@/update/UpdateSheet';
+
+/** Replaces the app when any route throws while rendering, instead of leaving a blank screen. */
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Promise<void> }) {
+  return <CrashScreen error={error} retry={() => void retry()} />;
+}
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 registerPwa();
