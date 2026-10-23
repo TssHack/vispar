@@ -34,10 +34,11 @@ function extensionOf(url: string): string {
 export function containerOf(source: SourceLike): Container | null {
   const ext = extensionOf(source.url);
   if ((KNOWN as string[]).includes(ext)) return ext as Container;
-  if (ext && /^[a-z0-9]{1,5}$/.test(ext)) return 'other';
+  // Unknown or missing extension (`download.php?file=a`, `/stream/123`): the API's type is all we have.
   const type = (source.type ?? '').toLowerCase().trim();
   if ((KNOWN as string[]).includes(type)) return type as Container;
   if (/m3u8/.test(type)) return 'm3u8';
+  if (ext && /^[a-z0-9]{1,5}$/.test(ext)) return 'other';
   return null;
 }
 

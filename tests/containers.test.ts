@@ -37,6 +37,12 @@ describe('containerOf', () => {
     expect(containerOf(src('', 'http://h/stream/123', ''))).toBeNull();
   });
 
+  it('uses the API type for a script-style URL whose extension says nothing (download.php?file=a)', () => {
+    expect(containerOf(src('', 'http://h/get/download.php?file=a', 'mkv'))).toBe('mkv');
+    expect(containerOf(src('', 'http://h/get/download.php?file=a', ''))).toBe('other');
+    expect(canPlayInApp(src('', 'http://h/get/download.php?file=a', 'mkv'), 'ios')).toBe(false);
+  });
+
   it('does not mistake a dotted directory for an extension', () => {
     expect(containerOf(src('', 'http://h/a.mkv/file'))).toBeNull();
   });
