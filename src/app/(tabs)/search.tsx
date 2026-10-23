@@ -8,6 +8,8 @@ import { Chip } from '@/components/Chip';
 import { Focusable } from '@/components/Focusable';
 import { Icon } from '@/components/Icon';
 import { faNum } from '@/lib/format';
+import { clearSearches, forgetSearch, recentStore, rememberSearch } from '@/search/store';
+import { Text } from '@/components/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 
 type Filter = 'all' | 'movie' | 'serie';
@@ -18,10 +20,18 @@ export default function Search() {
   const [query, setQuery] = useState(params.q ?? '');
   const [filter, setFilter] = useState<Filter>('all');
   const search = useSearch(query);
+  const recent = recentStore.use((l) => l);
 
   useEffect(() => {
     if (params.q !== undefined) setQuery(params.q);
   }, [params.q]);
+
+  // Remember a search once it has sat still and found something, so half-typed words never land in the list.
+  useEffect(() => {
+    if (!(query.trim().length >= 2) || !search.data?.length) return;
+    const t = setTimeout(() => rememberSearch(query), 1500);
+    return () => clearTimeout(t);
+  }, [query, search.data]);
 
   const all = search.data ?? [];
   const items = useMemo(() => (filter === 'all' ? all : all.filter((p) => p.type === filter)), [all, filter]);
@@ -52,6 +62,7 @@ export default function Search() {
           accessibilityLabel="عبارت جستجو"
           autoFocus={!params.q}
           returnKeyType="search"
+          onSubmitEditing={() => rememberSearch(query)}
           style={{ flex: 1, color: colors.text, fontFamily: 'Arad-Regular', fontSize: 15, textAlign: 'right', outlineStyle: 'none' } as object}
         />
         {query ? (
@@ -66,6 +77,32 @@ export default function Search() {
           </Focusable>
         ) : null}
       </View>
+      {!ready && recent.length > 0 ? (
+        <View style={{ gap: 10 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text size={13} weight={700} color="text2">جستجوهای اخیر</Text>
+            <Focusable onPress={clearSearches} accessibilityRole="button" accessibilityLabel="پاک کردن همه جستجوهای اخیر" ringRadius={8} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+              <Text size={12} weight={600} color="muted">پاک کردن همه</Text>
+            </Focusable>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {recent.map((q) => (
+              <View key={q} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Chip label={q} onPress={() => setQuery(q)} />
+                <Focusable
+                  onPress={() => forgetSearch(q)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`حذف «${q}» از جستجوهای اخیر`}
+                  ringRadius={14}
+                  style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Icon name="close" size={12} color="muted" />
+                </Focusable>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
       {ready && all.length > 0 ? (
         <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="tablist">
           <Chip label={`همه · ${faNum(counts.all)}`} selected={filter === 'all'} onPress={() => setFilter('all')} />
