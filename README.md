@@ -110,7 +110,7 @@ Both APKs are built on GitHub's runners by the **Android builds** workflow (`.gi
 The **iOS builds** workflow (`.github/workflows/ios.yml`) produces two files on a macOS runner, with no secrets needed:
 
 - `Vispar-*-ios-simulator.zip`: the app for the iOS Simulator (arm64 and Intel). Unzip it and drag `Vispar.app` onto a running Simulator, or run `xcrun simctl install booted Vispar.app` and `xcrun simctl launch booted com.fazli.vispar`.
-- `Vispar-*-ios-unsigned.ipa`: iPhone and iPad build. **It is not signed**, because Apple only installs signed apps. Re-sign and install it with AltStore, Sideloadly (free Apple ID, valid 7 days) or your own certificate and provisioning profile. It is not a TestFlight or App Store build.
+- `Vispar-*-ios-unsigned.ipa`: iPhone and iPad build. **It is not signed**, because Apple only installs signed apps. Re-sign and install it with AltStore, Sideloadly (free Apple ID, valid 7 days) or your own certificate and provisioning profile. On Linux, see [docs/ios-install-linux.md](docs/ios-install-linux.md) (xtool). It is not a TestFlight or App Store build.
 
 The desktop builds are produced by the **Desktop builds** workflow (`.github/workflows/desktop.yml`). Push a `v*` tag and the installers are attached to the release automatically.
 
