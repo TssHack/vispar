@@ -6,6 +6,8 @@ export type SheetRequest = {
   title: string;
   /** Present for players: play in Vispar's own player. */
   playInternal?: () => void;
+  /** Shown under the title, e.g. why the built-in player is not offered for this file. */
+  note?: string;
 };
 
 type Listener = (r: SheetRequest | null) => void;

@@ -2,6 +2,8 @@ import { router } from 'expo-router';
 import { Platform } from 'react-native';
 
 import type { ContentType, Source } from '@/api/types';
+import { canPlayInApp, containerLabel, containerOf } from '@/lib/containers';
+import { appPlatform } from '@/lib/platform';
 import { getSettings } from '@/settings/store';
 import { isDesktopApp } from '@/update/target';
 
@@ -34,9 +36,17 @@ export function playerParams(source: Source, ctx: PlayContext) {
 /** The web app is for browsing: HTTPS pages cannot load these plain-HTTP files, so playing hands off to an external player. */
 const webHandsOff = Platform.OS === 'web' && !isDesktopApp;
 
+/** Why the built-in player is not offered for this file, or undefined when it is. */
+export function unplayableNote(source: Source): string | undefined {
+  if (canPlayInApp(source, appPlatform())) return undefined;
+  const container = containerLabel(containerOf(source)) || 'این';
+  return `این فایل ${container} است و پلیر داخلی iOS آن را پخش نمی‌کند. با VLC، Infuse یا nPlayer باز کنید.`;
+}
+
 export function playInternal(source: Source, ctx: PlayContext, replace = false) {
-  if (webHandsOff) {
-    openExternalSheet({ kind: 'player', url: source.url, title: ctx.title });
+  if (webHandsOff || !canPlayInApp(source, appPlatform())) {
+    // Never hand a file the decoder cannot play to the player screen: explain and offer the others.
+    openExternalSheet({ kind: 'player', url: source.url, title: ctx.title, note: unplayableNote(source) });
     return;
   }
   const nav = { pathname: '/player' as const, params: playerParams(source, ctx) };
@@ -47,8 +57,15 @@ export function playInternal(source: Source, ctx: PlayContext, replace = false) 
 /** Plays according to the user's "player" setting: Vispar, always ask, or a chosen app. */
 export function play(source: Source, ctx: PlayContext, opts: { forceChooser?: boolean } = {}) {
   const mode = getSettings().playerMode;
-  if (opts.forceChooser || mode === 'ask' || webHandsOff) {
-    openExternalSheet({ kind: 'player', url: source.url, title: ctx.title, playInternal: webHandsOff ? undefined : () => playInternal(source, ctx) });
+  const inApp = canPlayInApp(source, appPlatform());
+  if (opts.forceChooser || mode === 'ask' || webHandsOff || (!inApp && mode === 'internal')) {
+    openExternalSheet({
+      kind: 'player',
+      url: source.url,
+      title: ctx.title,
+      playInternal: webHandsOff || !inApp ? undefined : () => playInternal(source, ctx),
+      note: unplayableNote(source),
+    });
     return;
   }
   const app = mode !== 'internal' ? findApp(mode) : null;

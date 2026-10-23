@@ -11,6 +11,8 @@ import { download, play, type PlayContext } from '@/external/actions';
 import { useLayout } from '@/hooks/useLayout';
 import { canResume, progressKey, useProgressMap } from '@/library/store';
 import { faClock, faNum, faScore, faYear, isStreamOnly } from '@/lib/format';
+import { canPlayInApp, containerLabel, containerOf } from '@/lib/containers';
+import { appPlatform } from '@/lib/platform';
 import { pickSource } from '@/lib/sources';
 import { useSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -49,7 +51,7 @@ export default function MovieScreen() {
   if (!movie) return <NotFound />;
 
   const ctx: PlayContext = { type: 'movie', id: movie.id, title: movie.title };
-  const src = pickSource(movie.sources, defaultQuality);
+  const src = pickSource(movie.sources, defaultQuality, { platform: appPlatform() });
   const saved = progress[progressKey('movie', movie.id)];
   const resumable = canResume(saved);
 
@@ -60,7 +62,7 @@ export default function MovieScreen() {
         actions={
           <>
             <Button
-              label={!src ? 'لینک پخش موجود نیست' : resumable ? `ادامه از ${faClock(saved!.position)}` : `پخش · ${src.quality}`}
+              label={!src ? 'لینک پخش موجود نیست' : !canPlayInApp(src, appPlatform()) ? `پخش با پلیر دیگر · ${containerLabel(containerOf(src))}` : resumable ? `ادامه از ${faClock(saved!.position)}` : `پخش · ${src.quality}`}
               icon="play"
               size="lg"
               disabled={!src}

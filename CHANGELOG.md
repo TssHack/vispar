@@ -4,6 +4,17 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Changed
+
+- **iOS: MKV files are no longer handed to the built-in player** (part of [#6](https://github.com/TssHack/vispar/issues/6)). Apple's player cannot decode MKV, which is about 89% of the catalogue's full-length files (measured on 90 titles). Now:
+  - The app picks a **full-length** MP4 when one exists (about 9% of titles). Trailers never count as a replacement for the film, so a trailer is not played instead of it.
+  - When only MKV is available, *Play* opens the external-player chooser (VLC, Infuse, nPlayer, ...) with a note explaining why, instead of failing with a generic error. The detail button reads *Play with another player · MKV*.
+  - The quality list marks such rows *only with another player* and recommends the file the app would really pick.
+  - The player screen explains the problem if it is opened with an MKV on iOS (deep link, next episode) and offers the external player, another MP4 quality, copy link and back.
+  - Android, the desktop app and the web behave as before. Detection is conservative: only MKV/AVI/WMV/FLV are rejected, so unknown URLs are still attempted. The URL's extension wins over the API's `type` field (one source says `mkv` for a `.mp4` URL).
+  - `?platform=ios` previews these rules in a browser.
+  - Not done here: real MKV playback on iOS (a native decoder), which is the second half of #6.
+
 ### Added
 
 - **Docs:** a guide to sign and install the unsigned iOS IPA from Linux with xtool and a free Apple ID ([#11](https://github.com/TssHack/vispar/issues/11)). It states what is not yet tested on a real device.
