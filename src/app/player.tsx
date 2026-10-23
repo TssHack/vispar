@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ContentType, Source } from '@/api/types';
 import { Button } from '@/components/Button';
+import { CrashScreen } from '@/components/CrashScreen';
 import { goBack } from '@/components/DetailHeader';
 import { Focusable } from '@/components/Focusable';
 import { Icon, type IconName } from '@/components/Icon';
@@ -37,6 +38,11 @@ import { subtitleHint } from '@/lib/subtitles/parse';
 import { subtitleKey } from '@/lib/subtitles/store';
 import { getSettings, useSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
+
+/** A player crash returns to the previous screen instead of replacing the whole app. */
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Promise<void> }) {
+  return <CrashScreen error={error} retry={() => void retry()} onBack={goBack} />;
+}
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const FIT_NEXT = { contain: 'cover', cover: 'fill', fill: 'contain' } as const;
