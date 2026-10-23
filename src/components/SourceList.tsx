@@ -3,8 +3,10 @@ import { View } from 'react-native';
 import type { Source } from '@/api/types';
 import { download, play, type PlayContext } from '@/external/actions';
 import { useLayout } from '@/hooks/useLayout';
+import { canPlayInApp } from '@/lib/containers';
 import { isStreamOnly, qualityLabel } from '@/lib/format';
-import { sortSources } from '@/lib/sources';
+import { appPlatform } from '@/lib/platform';
+import { pickSource, sortSources } from '@/lib/sources';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Focusable } from './Focusable';
@@ -40,6 +42,9 @@ export function SourceList({ sources, ctx, onDone }: { sources: Source[]; ctx: P
   const { colors } = useTheme();
   const { isTV } = useLayout();
   const sorted = sortSources(sources);
+  const platform = appPlatform();
+  // The recommended row is the one the app would actually pick here, not just the highest quality.
+  const recommended = pickSource(sorted, 'best', { platform });
   if (sorted.length === 0) {
     return (
       <Text size={13} color="muted">
@@ -50,8 +55,9 @@ export function SourceList({ sources, ctx, onDone }: { sources: Source[]; ctx: P
   return (
     <View style={{ borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
       {sorted.map((s, i) => {
-        const best = i === 0;
+        const best = s.url === recommended?.url;
         const stream = isStreamOnly(s);
+        const external = !canPlayInApp(s, platform);
         return (
           <View
             key={`${s.id}-${s.url}`}
@@ -75,7 +81,7 @@ export function SourceList({ sources, ctx, onDone }: { sources: Source[]; ctx: P
                 {qualityLabel(s.quality)}
               </Text>
               <Text size={12} color="muted">
-                {[s.type.toUpperCase(), best ? 'پیشنهادی' : null, stream ? 'فقط پخش آنلاین' : null].filter(Boolean).join(' · ')}
+                {[s.type.toUpperCase(), best ? 'پیشنهادی' : null, stream ? 'فقط پخش آنلاین' : null, external ? 'فقط با پلیر دیگر' : null].filter(Boolean).join(' · ')}
               </Text>
             </View>
             <SquareButton

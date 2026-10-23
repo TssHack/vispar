@@ -119,6 +119,14 @@ export function ExternalSheetHost() {
               {req.title}
             </Text>
           </View>
+          {req.note ? (
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', padding: 12, borderRadius: 14, backgroundColor: colors.accentSoft }}>
+              <Icon name="info" size={16} color="accentText" />
+              <Text size={12} color="text2" style={{ flex: 1 }}>
+                {req.note}
+              </Text>
+            </View>
+          ) : null}
           <ScrollView contentContainerStyle={{ gap: 8 }}>
             {isPlayer && req.playInternal ? (
               <Row icon="play" title="پلیر ویسپار" subtitle="پخش داخل برنامه" onPress={() => pick(req.playInternal!, 'internal')} />

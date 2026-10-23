@@ -7,6 +7,7 @@ import { play } from '@/external/actions';
 import { useLayout } from '@/hooks/useLayout';
 import { toggleFavorite, useIsFavorite } from '@/library/store';
 import { faNum, faYear, joinMeta } from '@/lib/format';
+import { appPlatform } from '@/lib/platform';
 import { pickSource } from '@/lib/sources';
 import { getSettings, useSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -26,7 +27,7 @@ function HeroSlide({ poster, preferredFocus }: { poster: Poster; preferredFocus?
   const big = isWide || isTV;
   const meta = joinMeta(faYear(poster.year), poster.genres.map((g) => g.title).slice(0, 2).join('، '), poster.duration ? faNum(poster.duration) : null);
   const onPlay = () => {
-    const src = poster.type === 'movie' ? pickSource(poster.sources, getSettings().defaultQuality) : null;
+    const src = poster.type === 'movie' ? pickSource(poster.sources, getSettings().defaultQuality, { platform: appPlatform() }) : null;
     if (src) play(src, { type: 'movie', id: poster.id, title: poster.title });
     else openPoster(poster);
   };

@@ -18,6 +18,7 @@ import { play, type PlayContext } from '@/external/actions';
 import { useLayout } from '@/hooks/useLayout';
 import { isFinished, lastEpisodeOf, progressKey, useProgressMap } from '@/library/store';
 import { faNum } from '@/lib/format';
+import { appPlatform } from '@/lib/platform';
 import { pickSource } from '@/lib/sources';
 import { getSettings } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -57,7 +58,7 @@ export default function SeriesScreen() {
   const playEpisode = (s: number, e: number) => {
     const ep = list[s]?.episodes[e];
     if (!ep) return;
-    const src = pickSource(ep.sources, getSettings().defaultQuality);
+    const src = pickSource(ep.sources, getSettings().defaultQuality, { platform: appPlatform() });
     if (!src) {
       toast('برای این قسمت لینکی ثبت نشده', 'alert');
       return;

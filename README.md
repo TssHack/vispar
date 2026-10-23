@@ -89,7 +89,7 @@ Vispar is a Persian-first (right-to-left) streaming client. It is built to feel 
   <img src="docs/screenshots/tv-home.jpg" width="100%" alt="Android TV home with side rail">
 </p>
 
-Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?ios=1`, and the splash states with `?splash=hold` or `?splash=offline`.
+Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?ios=1`, and the splash states with `?splash=hold` or `?splash=offline`, and the iOS container rules (MKV hand-off to external players) with `?platform=ios`.
 
 ## Platforms
 
@@ -165,7 +165,7 @@ Out of the box the app uses the hosted proxy at `https://cdnd.ehsanfazli.ir/api`
   <img src="docs/screenshots/tv-home.jpg" width="100%" alt="Android TV home with side rail">
 </p>
 
-Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?ios=1`, and the splash states with `?splash=hold` or `?splash=offline`.
+Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?ios=1`, and the splash states with `?splash=hold` or `?splash=offline`, and the iOS container rules (MKV hand-off to external players) with `?platform=ios`.
 
 ## Platforms
 

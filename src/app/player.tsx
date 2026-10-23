@@ -26,6 +26,8 @@ import { useLayout } from '@/hooks/useLayout';
 import { useRemote } from '@/hooks/useRemote';
 import { canResume, getProgress, progressKey, saveProgress, snapshot } from '@/library/store';
 import { faClock, faNum, isStreamOnly, qualityLabel } from '@/lib/format';
+import { canPlayInApp, containerLabel, containerOf, isTrailer } from '@/lib/containers';
+import { appPlatform } from '@/lib/platform';
 import { pickSource, sortSources } from '@/lib/sources';
 import { SeekBar } from '@/player/SeekBar';
 import { usePlayContext } from '@/player/usePlayContext';
@@ -122,24 +124,25 @@ export default function PlayerScreen() {
   const [current, setCurrent] = useState<Source | null>(fallbackSource);
   useEffect(() => {
     // Opened without a URL (e.g. from "continue watching"): use the default quality once known.
-    if (!current && ctx.sources.length) setCurrent(pickSource(ctx.sources, getSettings().defaultQuality));
+    if (!current && ctx.sources.length) setCurrent(pickSource(ctx.sources, getSettings().defaultQuality, { platform: appPlatform() }));
   }, [ctx.sources]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const title = ctx.poster?.title ?? params.title ?? '';
   const key = type ? progressKey(type, id, ctx.episode?.episodeId) : null;
 
-  const player = useVideoPlayer(fallbackSource && !isBlockedByBrowser(fallbackSource.url) ? { uri: playableUrl(fallbackSource.url), metadata: { title } } : null, (p) => {
+  const player = useVideoPlayer(fallbackSource && !isBlockedByBrowser(fallbackSource.url) && canPlayInApp(fallbackSource, appPlatform()) ? { uri: playableUrl(fallbackSource.url), metadata: { title } } : null, (p) => {
     p.timeUpdateEventInterval = 0.5;
     p.play();
   });
 
   // Load `current` into the player whenever it changes (first resolve, or a quality switch).
-  const loadedUrl = useRef<string | null>(fallbackSource && !isBlockedByBrowser(fallbackSource.url) ? fallbackSource.url : null);
+  const loadedUrl = useRef<string | null>(fallbackSource && !isBlockedByBrowser(fallbackSource.url) && canPlayInApp(fallbackSource, appPlatform()) ? fallbackSource.url : null);
   // HTTPS page + http file: first see whether the host also serves the file over https.
   const [httpsOf, setHttpsOf] = useState<Record<string, string | false>>({});
   const pendingSeek = useRef<number | null>(null);
   useEffect(() => {
     if (!current || loadedUrl.current === current.url) return;
+    if (!canPlayInApp(current, appPlatform())) return; // explained by the panel below, never handed to the decoder
     const upgraded = httpsOf[current.url];
     if (isBlockedByBrowser(current.url) && !upgraded) return;
     loadedUrl.current = current.url;
@@ -263,7 +266,7 @@ export default function PlayerScreen() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const goNext = useCallback(() => {
     if (!ctx.next) return;
-    const src = pickSource(ctx.next.sources, getSettings().defaultQuality);
+    const src = pickSource(ctx.next.sources, getSettings().defaultQuality, { platform: appPlatform() });
     if (!src) {
       toast('برای قسمت بعد لینکی ثبت نشده', 'alert');
       return;
@@ -394,6 +397,7 @@ export default function PlayerScreen() {
   if (!current && !sources.length && !resolving) return <NotFound title="لینک پخش نامعتبر است" body="دوباره از صفحه‌ی فیلم امتحان کنید." />;
 
   const blocked = !!current && isBlockedByBrowser(current.url) && !httpsOf[current.url];
+  const unplayable = !!current && !canPlayInApp(current, appPlatform());
   const checkingHttps = !!current && isBlockedByBrowser(current.url) && !(current.url in httpsOf);
   const big = isTV || isWide;
   const side = Math.max(insets.left, insets.right, 16);
@@ -432,14 +436,14 @@ export default function PlayerScreen() {
         </View>
       ) : null}
 
-      {(status === 'loading' && !blocked) || resolving || checkingHttps ? (
+      {(status === 'loading' && !blocked && !unplayable) || resolving || checkingHttps ? (
         <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : null}
 
       {/* Overlay controls */}
-      {visible && status !== 'error' && !ended && !blocked ? (
+      {visible && status !== 'error' && !ended && !blocked && !unplayable ? (
         <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'space-between' }}>
           <LinearGradient pointerEvents="box-none" colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0)']} style={{ paddingTop: top, paddingHorizontal: side, paddingBottom: 36, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             {!isTV ? <CtrlButton icon="back" label="بستن پخش" onPress={goBack} size={44} iconSize={22} filled /> : null}
@@ -656,6 +660,30 @@ export default function PlayerScreen() {
         </View>
       ) : null}
 
+      {/* A container this platform's decoder cannot play (MKV on iOS): say so, never show a generic error */}
+      {unplayable && current ? (
+        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: '#000' }}>
+          <Icon name="alert" size={36} color="#F4F1EA" />
+          <Text size={17} weight={800} color="#F4F1EA" align="center">
+            این فایل {containerLabel(containerOf(current)) || ''} است و iOS آن را پخش نمی‌کند
+          </Text>
+          <Text size={13} color="#C9C5D3" align="center" style={{ maxWidth: 520 }}>
+            پلیر داخلی آیفون و آیپد (AVPlayer) فایل‌های MKV را نمی‌شناسد. همین فایل را با VLC، Infuse یا nPlayer باز کنید، یا اگر کیفیت دیگری از نوع MP4 هست آن را امتحان کنید.
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
+            <Button label="پخش با پلیر دیگر" icon="external" onPress={() => openExternalSheet({ kind: 'player', url: current.url, title })} hasTVPreferredFocus={isTV} />
+            {sources
+              .filter((s) => s.url !== current.url && !isTrailer(s) && canPlayInApp(s, appPlatform()))
+              .slice(0, 1)
+              .map((s) => (
+                <Button key={s.url} label={`امتحان با ${s.quality}`} variant="onImage" onPress={() => switchSource(s)} />
+              ))}
+            <Button label="کپی لینک" icon="link" variant="onImage" onPress={() => copyLink(current.url)} />
+            <Button label="بازگشت" variant="onImage" onPress={goBack} />
+          </View>
+        </View>
+      ) : null}
+
       {/* HTTPS page + plain-HTTP media: the browser refuses to load it, so explain and offer the way out */}
       {blocked && !checkingHttps && current ? (
         <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: '#000' }}>
@@ -677,7 +705,7 @@ export default function PlayerScreen() {
       ) : null}
 
       {/* Error */}
-      {status === 'error' && !blocked ? (
+      {status === 'error' && !blocked && !unplayable ? (
         <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: 'rgba(0,0,0,0.9)' }}>
           <Icon name="alert" size={36} color="#F4F1EA" />
           {(() => {
