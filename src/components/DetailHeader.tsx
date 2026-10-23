@@ -1,3 +1,4 @@
+import { parseDescription } from '@/lib/description';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
@@ -146,15 +147,34 @@ export function DetailHeader({ poster, extraMeta, actions, children }: Props) {
     </View>
   );
 
-  const description = poster.description ? (
+  const parsed = useMemo(() => parseDescription(poster.description), [poster.description]);
+  const people = ([['director', 'کارگردان'], ['cast', 'ستارگان'], ['language', 'زبان'], ['ageRating', 'رده‌ی سنی'], ['network', 'شبکه']] as const)
+    .map(([key, label]) => ({ label, value: parsed.fields[key] }))
+    .filter((f) => f.value);
+
+  const description = parsed.synopsis || people.length ? (
     <View style={{ gap: 6, maxWidth: 820 }}>
-      <Text size={16} weight={800} accessibilityRole="header">
-        داستان
-      </Text>
-      <Text size={big ? 15 : 14} color="text2" line={1.9} numberOfLines={expanded ? undefined : 4}>
-        {poster.description}
-      </Text>
-      {poster.description.length > 180 ? (
+      {parsed.synopsis ? (
+        <>
+          <Text size={16} weight={800} accessibilityRole="header">
+            داستان
+          </Text>
+          <Text size={big ? 15 : 14} color="text2" line={1.9} numberOfLines={expanded ? undefined : 4}>
+            {parsed.synopsis}
+          </Text>
+        </>
+      ) : null}
+      {people.length ? (
+        <View style={{ gap: 4, marginTop: parsed.synopsis ? 6 : 0 }}>
+          {people.map((f) => (
+            <Text key={f.label} size={13} color="text2" line={1.7}>
+              <Text size={13} weight={700}>{f.label}: </Text>
+              {f.value}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+      {parsed.synopsis.length > 180 ? (
         <Focusable onPress={() => setExpanded((e) => !e)} accessibilityRole="button" ringRadius={8} style={{ alignSelf: 'flex-start', paddingVertical: 4 }}>
           <Text size={13} weight={700} color="accentText">
             {expanded ? 'بستن' : 'بیشتر بخوانید'}

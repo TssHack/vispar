@@ -6,6 +6,7 @@ import type { Poster } from '@/api/types';
 import { play } from '@/external/actions';
 import { useLayout } from '@/hooks/useLayout';
 import { toggleFavorite, useIsFavorite } from '@/library/store';
+import { parseDescription } from '@/lib/description';
 import { faNum, faYear, joinMeta } from '@/lib/format';
 import { appPlatform } from '@/lib/platform';
 import { pickSource } from '@/lib/sources';
@@ -24,6 +25,7 @@ import { Text } from './Text';
 function HeroSlide({ poster, preferredFocus }: { poster: Poster; preferredFocus?: boolean }) {
   const { isWide, isTV } = useLayout();
   const fav = useIsFavorite(poster.type, poster.id);
+  const synopsis = parseDescription(poster.description).synopsis;
   const big = isWide || isTV;
   const meta = joinMeta(faYear(poster.year), poster.genres.map((g) => g.title).slice(0, 2).join('، '), poster.duration ? faNum(poster.duration) : null);
   const onPlay = () => {
@@ -48,9 +50,9 @@ function HeroSlide({ poster, preferredFocus }: { poster: Poster; preferredFocus?
             </Text>
           ) : null}
         </View>
-        {big && /[\p{L}\p{N}]/u.test(poster.description) ? (
+        {big && synopsis ? (
           <Text size={isTV ? 17 : 16} color={cinema.onImage2} line={1.8} numberOfLines={2}>
-            {poster.description}
+            {synopsis}
           </Text>
         ) : null}
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
