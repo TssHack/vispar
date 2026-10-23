@@ -14,6 +14,3 @@ leaking stored data, or unsafe handling of the update download.
 
 The API proxy and server are private and hosted separately. If you find a problem that involves
 them, report it the same way and it will be passed on.
-
-The app never contains the upstream catalogue key; a key found in this repository or in a build
-is a bug worth reporting.
