@@ -10,7 +10,7 @@ The release ships `Vispar-<version>-ios-unsigned.ipa`. Apple only runs signed ap
 | --- | --- | --- |
 | Install on your own devices | Yes | Yes |
 | Signature lasts | **7 days**, then the app stops opening until you sign it again | 1 year |
-| Apps you can have signed at once | A small number (Apple limits it; currently 3) | Not limited this way |
+| Apps you can have signed at once | A small number (Apple's rule, historically 3; it can change) | Not limited this way |
 | TestFlight / App Store | No | Yes |
 | xtool login mode | Password | API key or password |
 
@@ -19,7 +19,7 @@ Re-signing is just running the install command again with the same IPA.
 ## 1. Prepare the phone
 
 1. iOS 16.4 or newer (the app's minimum).
-2. **Settings → Privacy & Security → Developer Mode → On**, then restart (needed on iOS 16 and later).
+2. **Settings → Privacy & Security → Developer Mode → On**, then restart (needed on iOS 16 and later). On some phones the switch only appears after the first install attempt: try the install once, then turn it on and install again.
 3. Plug the phone in with a cable and tap **Trust This Computer**.
 
 ## 2. Install the requirements on Linux
