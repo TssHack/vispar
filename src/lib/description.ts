@@ -14,7 +14,7 @@ export type ParsedDescription = {
   note: string;
 };
 
-export type FieldKey = 'originalTitle' | 'persianTitle' | 'genres' | 'country' | 'language' | 'ageRating' | 'director' | 'cast' | 'network' | 'episodes' | 'year' | 'format' | 'quality' | 'size' | 'rating' | 'otherTitles';
+export type FieldKey = 'originalTitle' | 'persianTitle' | 'genres' | 'country' | 'language' | 'ageRating' | 'director' | 'cast' | 'network' | 'episodes' | 'year' | 'format' | 'quality' | 'size' | 'rating' | 'otherTitles' | 'status' | 'airing';
 
 const FIELD_KEYS: Record<string, FieldKey> = {
   'نام اصلی': 'originalTitle',
@@ -38,9 +38,12 @@ const FIELD_KEYS: Record<string, FieldKey> = {
   حجم: 'size',
   'امتیاز فیلم': 'rating',
   'امتیاز سریال': 'rating',
+  وضعیت: 'status',
+  'روز های پخش': 'airing',
 };
 
-const MARKER = /خلاصه[\s\u200c]*(?:ی[\s\u200c]*)?داستان\s*[:：]?/;
+// Movies say "خلاصه داستان", series often "خلاصه سریال".
+const MARKER = /خلاصه[\s\u200c]*(?:ی[\s\u200c]*)?(?:داستان|سریال|فیلم)\s*[:：]?/;
 const FIELD_LINE = /^\s*([^\n:：]{2,32}?)\s*[:：]\s*(.*?)\s*$/;
 const NOTE = /زیرنویس.{0,12}چسبیده|چسبیده.{0,12}زیرنویس|دوبله|hardsub/i;
 
@@ -78,9 +81,23 @@ export function parseDescription(raw: string | null | undefined): ParsedDescript
   let synopsis = clean(tail);
   let note = '';
   const lines = synopsis.split('\n');
-  while (lines.length && (lines[lines.length - 1]!.trim() === '' || NOTE.test(lines[lines.length - 1]!))) {
-    const last = lines.pop()!.trim();
-    if (last) note = note ? `${last}، ${note}` : last;
+  // Peel what the card appends after the story: blank lines, source notes, and trailing fields such as
+  // "وضعیت سریال: به پایان رسیده است".
+  const trailingField = (line: string) => {
+    const m = FIELD_LINE.exec(line);
+    return m && FIELD_KEYS[normaliseKey(m[1]!)] ? { key: FIELD_KEYS[normaliseKey(m[1]!)]!, value: (m[2] ?? '').trim() } : null;
+  };
+  while (lines.length) {
+    const line = lines[lines.length - 1]!;
+    const field = trailingField(line);
+    if (line.trim() === '') lines.pop();
+    else if (NOTE.test(line)) {
+      lines.pop();
+      note = note ? `${line.trim()}، ${note}` : line.trim();
+    } else if (field) {
+      lines.pop();
+      if (field.value && fields[field.key] === undefined) fields[field.key] = field.value;
+    } else break;
   }
   synopsis = lines.join('\n').trim();
   return { synopsis, fields, note };

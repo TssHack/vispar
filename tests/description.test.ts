@@ -9,7 +9,19 @@ const MOVIE =
 const SERIES =
   'نام اصلی سریال :  Small Town Remedy\r\n\r\nامتیاز سریال : 8.2/10\r\n\r\nنام پارسی سریال :   مرهم شهر کوچک\r\n\r\nژانر :  زندگی, درام, پزشکی\r\n\r\nتاریخ انتشار: 2026\r\n\r\nمحصول کشور: چین\r\n\r\nزبان:  چینی\r\n\r\nرده سنی:  16\r\n\r\nپخش از شبکه:  CCTV iQiyi\r\n\r\nتعداد قسمت ها:  30 قسمت\r\n\r\nخلاصه داستان :\r\n\r\nپزشکی به شهر کوچکی برمی‌گردد.';
 
+// Series 35418 (Crystal Lake): the marker says "خلاصه سریال" and a status field follows the story.
+const SERIES_SUMMARY =
+  'نام اصلی سریال :  Crystal Lake\r\n\r\nامتیاز سریال : 7.5/10\r\n\r\nژانر :  ترسناک , معمایی\r\n\r\nزبان: انگلیسی\r\n\r\nستارگان:  Cameron Scoggins\r\n\r\nکارگردان: Logan George\r\n\r\nکیفیت 480-----720\r\n\r\nحجم:   کیفیت 480 (292 مگابایت )\r\n\r\n\r\nخلاصه سریال : \r\n\r\nداستان زنی به\u200cنام پاملا وورهیس که پس از مرگ پسرش، رازهایی از گذشته\u200cاش دوباره پدیدار می\u200cشود. \r\n\r\n\r\nزیرنویس چسبیده پارسی\r\n\r\n\r\nوضعیت سریال: به پایان رسیده است';
+
 describe('parseDescription', () => {
+  it('reads the series "خلاصه سریال" marker and peels the trailing note and status field', () => {
+    const d = parseDescription(SERIES_SUMMARY);
+    expect(d.synopsis).toBe('داستان زنی به\u200cنام پاملا وورهیس که پس از مرگ پسرش، رازهایی از گذشته\u200cاش دوباره پدیدار می\u200cشود.');
+    expect(d.note).toBe('زیرنویس چسبیده پارسی');
+    expect(d.fields.status).toBe('به پایان رسیده است');
+    expect(d.fields.director).toBe('Logan George');
+  });
+
   it('splits a movie info card into synopsis, fields and the trailing note', () => {
     const d = parseDescription(MOVIE);
     expect(d.synopsis).toBe('زن جوانی که برای فرار به یک مهمانی رفته است، متحدی غیرمنتظره پیدا می‌کند و ...');
