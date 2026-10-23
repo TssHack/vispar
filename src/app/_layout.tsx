@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -34,9 +34,14 @@ function Shell() {
   const [fontsLoaded, fontError] = useFonts(fontFiles);
   const done = (fontsLoaded || !!fontError) && ready;
   const net = useNetStatus();
+  const queries = useQueryClient();
   const [minShown, setMinShown] = useState(false);
   const [offlineOk, setOfflineOk] = useState(false);
   const wasDown = useRef(false);
+  // Once the app has started (online once, or the user chose to continue offline) a later drop only
+  // shows the banner: the full-screen boot page is for launch, and replacing the app loses the user's place.
+  const booted = useRef(false);
+  if ((net === 'online' && minShown) || offlineOk) booted.current = true;
 
   useEffect(() => {
     if (!done) return;
@@ -58,21 +63,23 @@ function Shell() {
     if (net === 'online' && wasDown.current) {
       wasDown.current = false;
       toast('اتصال برقرار شد', 'check');
+      // Rows that failed while we were offline load again without a manual refresh.
+      void queries.refetchQueries({ predicate: (q) => q.state.status === 'error' });
     } else if (net === 'offline' || net === 'server') wasDown.current = true;
-  }, [net]);
+  }, [net, queries]);
 
   if (!done) return null;
 
   // `?splash=hold` / `?splash=offline` pin the splash for design review and screenshots.
   const hold = Platform.OS === 'web' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('splash') : null;
-  const booting = !minShown || net === 'checking' || hold === 'hold';
+  const booting = !booted.current && (!minShown || net === 'checking');
   const shownNet = hold === 'offline' ? 'offline' : net;
-  if (booting || hold === 'offline' || ((net === 'offline' || net === 'server') && !offlineOk)) {
+  if (hold === 'hold' || hold === 'offline' || booting || (!booted.current && (net === 'offline' || net === 'server'))) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
         <StatusBar style={name === 'dark' ? 'light' : 'dark'} />
         <BootScreen
-          status={booting ? 'checking' : (shownNet as 'offline' | 'server')}
+          status={booting || hold === 'hold' ? 'checking' : (shownNet as 'offline' | 'server')}
           onRetry={() => void checkConnection()}
           onContinue={() => setOfflineOk(true)}
         />

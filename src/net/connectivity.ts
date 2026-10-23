@@ -1,15 +1,11 @@
 import { useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 
+import { setNetworkFailureHandler } from '@/api/client';
 import { config } from '@/config';
 
-/**
- * - checking: probe in flight
- * - online:   internet works and the catalog API answered
- * - offline:  no internet at all
- * - server:   internet works but the catalog API is unreachable
- */
-export type NetStatus = 'checking' | 'online' | 'offline' | 'server';
+import { shouldProbe, type NetStatus } from './connectivity-rules';
+export type { NetStatus } from './connectivity-rules';
 
 /** Which step of the probe is running (shown on the splash). */
 export type NetPhase = 'internet' | 'server' | 'done';
@@ -86,9 +82,17 @@ export function checkConnection(): Promise<NetStatus> {
   return inflight;
 }
 
-/** Called when a request fails in a way that suggests the connection dropped. */
+let lastReport = 0;
+
+/**
+ * Called by the API client when a request fails in a way that suggests the connection dropped. The
+ * probe decides whether we are really offline, so one failing host cannot flip the state by itself.
+ */
 export function reportFailure() {
-  if (state.status === 'online') void checkConnection();
+  const now = Date.now();
+  if (!shouldProbe(state.status, now, lastReport)) return;
+  lastReport = now;
+  void checkConnection();
 }
 
 let monitoring = false;
@@ -96,6 +100,7 @@ let monitoring = false;
 export function startMonitor() {
   if (monitoring) return;
   monitoring = true;
+  setNetworkFailureHandler(reportFailure);
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     window.addEventListener('online', () => void checkConnection());
     window.addEventListener('offline', () => set('offline'));
