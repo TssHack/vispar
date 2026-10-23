@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BootScreen, OfflineBanner } from '@/components/BootScreen';
 import { CrashScreen } from '@/components/CrashScreen';
 import { toast, ToastHost } from '@/components/Toast';
+import { startPersistLifecycle } from '@/lib/persistLifecycle';
 import { onNotificationTap } from '@/notifications';
 import { startContentWatcher } from '@/notifications/watcher';
 import { InstallPrompt } from '@/pwa/InstallPrompt';
@@ -28,6 +29,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Pro
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 registerPwa();
+startPersistLifecycle();
 
 function Shell() {
   const { colors, name, ready } = useTheme();
