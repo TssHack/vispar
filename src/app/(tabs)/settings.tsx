@@ -1,3 +1,4 @@
+import * as Clipboard from 'expo-clipboard';
 import { useEffect, useState } from 'react';
 import { Linking, Platform, ScrollView, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,13 +16,50 @@ import { useLayout } from '@/hooks/useLayout';
 import { getPermission, notificationsSupported, notifyLocal, requestPermission } from '@/notifications';
 import { checkNewContent, checkNewEpisodes } from '@/notifications/watcher';
 import { detectStandalone, openInstallGuide, promptInstall, useInstallKind } from '@/pwa/install';
-import { clearFavorites, clearHistory } from '@/library/store';
+import { clearFavorites, clearHistory, libraryStore } from '@/library/store';
+import { buildBackup, mergeLibrary, parseBackup } from '@/lib/backup';
 import { confirm } from '@/lib/confirm';
 import { faNum, faVersion } from '@/lib/format';
 import { setHomeSection, setSetting, settingsStore, type AccentName, type HomeSections, type SubtitleBackground, type SubtitleSize } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
 import { accents, type ThemePreference } from '@/theme/tokens';
 import { useUpdates } from '@/update/UpdateProvider';
+
+const BACKUP_ERRORS = {
+  empty: 'کلیپ‌بورد خالی است. ابتدا پشتیبان را کپی کنید.',
+  'too-large': 'متن کلیپ‌بورد بیش از حد بزرگ است.',
+  'not-json': 'متن کلیپ‌بورد یک پشتیبان ویسپار نیست.',
+  'not-backup': 'متن کلیپ‌بورد یک پشتیبان ویسپار نیست.',
+  version: 'این پشتیبان از نسخه‌ی دیگری از برنامه است.',
+} as const;
+
+async function copyBackup() {
+  const lib = libraryStore.get();
+  if (!lib.favorites.length && !Object.keys(lib.progress).length) return toast('چیزی برای پشتیبان‌گیری نیست', 'alert');
+  try {
+    await Clipboard.setStringAsync(buildBackup(lib));
+    toast('پشتیبان کپی شد. جایی امن بچسبانید', 'check');
+  } catch {
+    toast('کپی انجام نشد', 'alert');
+  }
+}
+
+async function restoreBackup() {
+  let text = '';
+  try {
+    text = await Clipboard.getStringAsync();
+  } catch {
+    return toast('دسترسی به کلیپ‌بورد داده نشد', 'alert');
+  }
+  const parsed = parseBackup(text);
+  if (!parsed.ok) return toast(BACKUP_ERRORS[parsed.reason], 'alert');
+  const merged = mergeLibrary(libraryStore.get(), parsed.library);
+  if (!merged.addedFavorites && !merged.addedProgress) return toast('همه‌ی موارد از قبل وجود دارند', 'check');
+  const ok = await confirm('بازیابی پشتیبان', `${faNum(merged.addedFavorites)} مورد لیست و ${faNum(merged.addedProgress)} مورد تاریخچه اضافه می‌شود. موارد فعلی حفظ می‌شوند.`, 'بازیابی');
+  if (!ok) return;
+  libraryStore.set((l) => mergeLibrary(l, parsed.library).library);
+  toast('بازیابی شد', 'check');
+}
 
 const THEMES: { value: ThemePreference; label: string; swatch: [string, string] }[] = [
   { value: 'system', label: 'سیستم', swatch: ['#F7F5F0', '#08080C'] },
@@ -398,6 +436,8 @@ export default function Settings() {
 
       <Section title="داده‌ها" icon="history">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          <Button label="کپی پشتیبان لیست و تاریخچه" icon="download" variant="surface" onPress={() => void copyBackup()} />
+          <Button label="بازیابی از کلیپ‌بورد" icon="refresh" variant="surface" onPress={() => void restoreBackup()} />
           <Button
             label="پاک کردن تاریخچه"
             icon="trash"

@@ -16,7 +16,7 @@ export type Progress = {
   updatedAt: number;
 };
 
-type Library = {
+export type Library = {
   favorites: { poster: SavedPoster; addedAt: number }[];
   /** Keyed by progressKey(). One entry per movie and per episode. */
   progress: Record<string, Progress>;

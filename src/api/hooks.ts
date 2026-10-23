@@ -90,7 +90,9 @@ export function useSearch(query: string) {
 /** Detail lookup: cached item first; if a deep link lands cold, try a few list pages. */
 export function usePoster(type: ContentType, id: number) {
   const saved = findSaved(type, id);
-  const cached = findPoster(type, id) ?? (saved ? fromSaved(saved) : null);
+  const found = findPoster(type, id) ?? (saved ? fromSaved(saved) : null);
+  // A restored backup carries no source URLs; a movie without them cannot play, so fetch it fresh.
+  const cached = found && type === 'movie' && found.sources.length === 0 ? null : found;
   return useQuery({
     queryKey: [type, id, 'detail'],
     initialData: cached ?? undefined,
