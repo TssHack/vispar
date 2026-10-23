@@ -4,6 +4,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Fixed
+
+- **iOS artifact names** ([#9](https://github.com/TssHack/vispar/issues/9)): the packaged app was called `wyspar.app` (Expo's transliteration of the Persian app name), so the documented `Vispar.app` commands did not match. The simulator zip and the IPA now contain `Vispar.app`, and the workflow log prints the archive layout.
+
 ### Added
 
 - **iOS builds** ([#7](https://github.com/TssHack/vispar/issues/7)): a CI workflow that builds the iOS Simulator app (`Vispar-<version>-ios-simulator.zip`) and an unsigned iPhone/iPad IPA (`Vispar-<version>-ios-unsigned.ipa`) and attaches them to a release. The IPA must be re-signed (AltStore, Sideloadly, or your own certificate) to install on a device.
