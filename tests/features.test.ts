@@ -207,3 +207,23 @@ describe('episode alerts', () => {
     expect(countEpisodes([{ episodes: [1, 2] }, { episodes: [3] }, { episodes: [] }])).toBe(3);
   });
 });
+
+import { shortQuality } from '@/lib/format';
+
+describe('shortQuality', () => {
+  it('shortens catalogue quality strings to a resolution', () => {
+    expect(shortQuality('1080 زیرنویس')).toBe('1080p');
+    expect(shortQuality('720 دوبله پارس')).toBe('720p');
+    expect(shortQuality('720x265 زیرنویس')).toBe('720p');
+    expect(shortQuality('480 زیرنویس پر')).toBe('480p');
+    expect(shortQuality('1080p')).toBe('1080p');
+    expect(shortQuality('4K')).toBe('2160p');
+  });
+  it('keeps texts without a resolution and handles empty values', () => {
+    expect(shortQuality('تیزر')).toBe('تیزر');
+    expect(shortQuality('  ')).toBe('');
+    expect(shortQuality('')).toBe('');
+    expect(shortQuality(null)).toBe('');
+    expect(shortQuality(undefined)).toBe('');
+  });
+});

@@ -10,7 +10,7 @@ import { Text } from '@/components/Text';
 import { download, play, type PlayContext } from '@/external/actions';
 import { useLayout } from '@/hooks/useLayout';
 import { canResume, progressKey, useProgressMap } from '@/library/store';
-import { faClock, faNum, faScore, faYear, isStreamOnly } from '@/lib/format';
+import { faClock, shortQuality, faNum, faScore, faYear, isStreamOnly } from '@/lib/format';
 import { canPlayInApp, containerLabel, containerOf } from '@/lib/containers';
 import { appPlatform } from '@/lib/platform';
 import { pickSource } from '@/lib/sources';
@@ -35,7 +35,9 @@ function Spec({ label, value }: { label: string; value: string }) {
 export default function MovieScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { isTV } = useLayout();
+  const { isTV, width } = useLayout();
+  // On narrow phones the quick download icon would squeeze the play label; every source row has its own download button.
+  const compact = width < 400;
   const defaultQuality = useSetting('defaultQuality');
   const progress = useProgressMap();
   const q = usePoster('movie', Number(id));
@@ -62,7 +64,7 @@ export default function MovieScreen() {
         actions={
           <>
             <Button
-              label={!src ? 'لینک پخش موجود نیست' : !canPlayInApp(src, appPlatform()) ? `پخش با پلیر دیگر · ${containerLabel(containerOf(src))}` : resumable ? `ادامه از ${faClock(saved!.position)}` : `پخش · ${src.quality}`}
+              label={!src ? 'لینک پخش موجود نیست' : !canPlayInApp(src, appPlatform()) ? `پخش با پلیر دیگر · ${containerLabel(containerOf(src))}` : resumable ? `ادامه از ${faClock(saved!.position)}` : shortQuality(src.quality) ? `پخش · ${shortQuality(src.quality)}` : 'پخش'}
               icon="play"
               size="lg"
               disabled={!src}
@@ -70,7 +72,7 @@ export default function MovieScreen() {
               onPress={() => src && play(src, ctx)}
               style={{ flex: 1 }}
             />
-            {src && !isStreamOnly(src) && !isTV ? <Button icon="download" variant="surface" size="lg" accessibilityLabel="دانلود" onPress={() => download(src, movie.title)} /> : null}
+            {src && !isStreamOnly(src) && !isTV && !compact ? <Button icon="download" variant="surface" size="lg" accessibilityLabel="دانلود" onPress={() => download(src, movie.title)} /> : null}
           </>
         }
       >

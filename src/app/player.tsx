@@ -25,7 +25,7 @@ import { openExternalSheet } from '@/external/sheet';
 import { useLayout } from '@/hooks/useLayout';
 import { useRemote } from '@/hooks/useRemote';
 import { canResume, getProgress, progressKey, saveProgress, snapshot } from '@/library/store';
-import { faClock, faNum, isStreamOnly, qualityLabel } from '@/lib/format';
+import { faClock, faNum, shortQuality, isStreamOnly, qualityLabel } from '@/lib/format';
 import { canPlayInApp, containerLabel, containerOf, isTrailer } from '@/lib/containers';
 import { appPlatform } from '@/lib/platform';
 import { pickSource, sortSources } from '@/lib/sources';
@@ -486,7 +486,7 @@ export default function PlayerScreen() {
               {ctx.next ? <CtrlButton icon="next" label="قسمت بعد" onPress={goNext} size={44} iconSize={22} /> : null}
               <View style={{ flex: 1 }} />
               <PillButton icon="gauge" text={faNum(`${playbackRate}x`)} label="سرعت پخش" onPress={() => setMenu(menu === 'speed' ? null : 'speed')} />
-              {current ? <PillButton icon="layers" text={current.quality || 'کیفیت'} label="کیفیت" onPress={() => setMenu(menu === 'quality' ? null : 'quality')} /> : null}
+              {current ? <PillButton icon="layers" text={shortQuality(current.quality) || 'کیفیت'} label="کیفیت" onPress={() => setMenu(menu === 'quality' ? null : 'quality')} /> : null}
               <PillButton
                 icon="subtitles"
                 text={subtitleLabel}

@@ -4,7 +4,7 @@ import type { Source } from '@/api/types';
 import { download, play, type PlayContext } from '@/external/actions';
 import { useLayout } from '@/hooks/useLayout';
 import { canPlayInApp } from '@/lib/containers';
-import { isStreamOnly, qualityLabel } from '@/lib/format';
+import { isStreamOnly, qualityLabel, shortQuality } from '@/lib/format';
 import { appPlatform } from '@/lib/platform';
 import { pickSource, sortSources } from '@/lib/sources';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -73,7 +73,7 @@ export function SourceList({ sources, ctx, onDone }: { sources: Source[]; ctx: P
           >
             <View style={{ minWidth: 56, height: 32, paddingHorizontal: 8, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: best ? colors.accentSoft : colors.surface2 }}>
               <Text size={12} weight={800} color={best ? 'accentText' : 'text2'} line={1.3} style={{ writingDirection: 'ltr' }}>
-                {s.quality || '—'}
+                {shortQuality(s.quality) || '—'}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
