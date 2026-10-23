@@ -7,8 +7,18 @@ export type PersistedStore<T> = {
   subscribe: (listener: () => void) => () => void;
   /** Resolves once the saved value has been read from storage. */
   ready: Promise<void>;
+  /** Writes a pending change now instead of waiting for the debounce. A no-op when nothing is pending. */
+  flush: () => Promise<void>;
   use: <S>(selector: (state: T) => S) => S;
 };
+
+const WRITE_DELAY_MS = 150;
+const registry = new Set<() => Promise<void>>();
+
+/** Flushes every store's pending write. Called when the app goes to the background or the page is hidden. */
+export function flushAllStores(): Promise<void[]> {
+  return Promise.all([...registry].map((flush) => flush()));
+}
 
 /**
  * Small global store backed by AsyncStorage. `migrate` receives whatever was saved before
@@ -20,11 +30,21 @@ export function createPersistedStore<T>(key: string, initial: T, migrate: (saved
   const emit = () => listeners.forEach((l) => l());
   let writeTimer: ReturnType<typeof setTimeout> | null = null;
 
+  const write = () => AsyncStorage.setItem(key, JSON.stringify(state)).catch(() => {});
+
   const persist = () => {
     if (writeTimer) clearTimeout(writeTimer);
     writeTimer = setTimeout(() => {
-      AsyncStorage.setItem(key, JSON.stringify(state)).catch(() => {});
-    }, 150);
+      writeTimer = null;
+      void write();
+    }, WRITE_DELAY_MS);
+  };
+
+  const flush = async () => {
+    if (!writeTimer) return; // nothing pending: do not overwrite storage with an unchanged (or not yet loaded) value
+    clearTimeout(writeTimer);
+    writeTimer = null;
+    await write();
   };
 
   const ready = AsyncStorage.getItem(key)
@@ -52,9 +72,11 @@ export function createPersistedStore<T>(key: string, initial: T, migrate: (saved
       return () => listeners.delete(l);
     },
     ready,
+    flush,
     use: (selector) =>
       // eslint-disable-next-line react-hooks/rules-of-hooks
       useSyncExternalStore(store.subscribe, () => selector(state), () => selector(state)),
   };
+  registry.add(flush);
   return store;
 }

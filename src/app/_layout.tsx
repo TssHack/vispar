@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BootScreen, OfflineBanner } from '@/components/BootScreen';
 import { toast, ToastHost } from '@/components/Toast';
+import { startPersistLifecycle } from '@/lib/persistLifecycle';
 import { onNotificationTap } from '@/notifications';
 import { startContentWatcher } from '@/notifications/watcher';
 import { InstallPrompt } from '@/pwa/InstallPrompt';
@@ -22,6 +23,7 @@ import { OtaBanner, UpdateSheet } from '@/update/UpdateSheet';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 registerPwa();
+startPersistLifecycle();
 
 function Shell() {
   const { colors, name, ready } = useTheme();
