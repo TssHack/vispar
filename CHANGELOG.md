@@ -4,6 +4,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Added
+
+- **Docs:** a guide to sign and install the unsigned iOS IPA from Linux with xtool and a free Apple ID ([#11](https://github.com/TssHack/vispar/issues/11)). It states what is not yet tested on a real device.
+
 ### Fixed
 
 - **iOS artifact names** ([#9](https://github.com/TssHack/vispar/issues/9)): the packaged app was called `wyspar.app` (Expo's transliteration of the Persian app name), so the documented `Vispar.app` commands did not match. The simulator zip and the IPA now contain `Vispar.app`, and the workflow log prints the archive layout.
