@@ -56,6 +56,18 @@ export function qualityLabel(quality: string): string {
   return quality || 'نامشخص';
 }
 
+/**
+ * A label short enough for a button or badge: "1080 زیرنویس" -> "1080p", "720x265 زیرنویس" -> "720p",
+ * "4K" -> "2160p". Qualities without a resolution (e.g. "تیزر") keep their text; empty stays empty.
+ * The full catalogue text belongs where there is room for it (source list, quality menu).
+ */
+export function shortQuality(quality: string | null | undefined): string {
+  const q = (quality ?? '').trim();
+  if (!q) return '';
+  const rank = qualityRank(q);
+  return rank > 0 ? `${rank}p` : q;
+}
+
 /** Sort key so higher resolutions come first. */
 export function qualityRank(quality: string): number {
   const m = quality.match(/(\d{3,4})/);
