@@ -3,6 +3,7 @@ import { FlatList, View } from 'react-native';
 
 import type { Poster } from '@/api/types';
 import { useLayout } from '@/hooks/useLayout';
+import { useFocusClaim } from '@/lib/focusClaim';
 import type { Progress } from '@/library/store';
 
 import { FadeIn } from './FadeIn';
@@ -57,6 +58,7 @@ type RailProps = {
 export function Rail({ title, subtitle, items, loading, error, onRetry, seeAll, onEndReached, firstFocused, showType }: RailProps) {
   const { gutter, posterWidth, isTV } = useLayout();
   const gap = isTV ? 22 : 12;
+  const focus = useFocusClaim(!!firstFocused);
   if (!loading && !error && items.length === 0) return null;
   return (
     <FadeIn style={{ marginTop: 24 }}>
@@ -76,7 +78,7 @@ export function Rail({ title, subtitle, items, loading, error, onRetry, seeAll, 
           keyExtractor={(p) => `${p.type}-${p.id}`}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: gutter, gap, paddingVertical: isTV ? 12 : 4 }}
-          renderItem={({ item, index }) => <PosterCard poster={item} width={posterWidth} showType={showType} hasTVPreferredFocus={firstFocused && index === 0} />}
+          renderItem={({ item, index }) => <PosterCard poster={item} width={posterWidth} showType={showType} hasTVPreferredFocus={focus.prefer(index)} onFocus={focus.claim} />}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.6}
           initialNumToRender={7}

@@ -7,6 +7,7 @@ import { CatalogGrid } from '@/components/CatalogGrid';
 import { Chip } from '@/components/Chip';
 import { Focusable } from '@/components/Focusable';
 import { Icon } from '@/components/Icon';
+import { useLayout } from '@/hooks/useLayout';
 import { faNum } from '@/lib/format';
 import { clearSearches, forgetSearch, recentStore, rememberSearch } from '@/search/store';
 import { Text } from '@/components/Text';
@@ -16,6 +17,7 @@ type Filter = 'all' | 'movie' | 'serie';
 
 export default function Search() {
   const { colors } = useTheme();
+  const { isTV } = useLayout();
   const params = useLocalSearchParams<{ q?: string }>();
   const [query, setQuery] = useState(params.q ?? '');
   const [filter, setFilter] = useState<Filter>('all');
@@ -60,7 +62,8 @@ export default function Search() {
           placeholder="نام فیلم یا سریال…"
           placeholderTextColor={colors.muted}
           accessibilityLabel="عبارت جستجو"
-          autoFocus={!params.q}
+          // On TV a focused text field opens the keyboard and keeps left/right for the cursor, trapping the remote.
+          autoFocus={!isTV && !params.q}
           returnKeyType="search"
           onSubmitEditing={() => rememberSearch(query)}
           style={{ flex: 1, color: colors.text, fontFamily: 'Arad-Regular', fontSize: 15, textAlign: 'right', outlineStyle: 'none' } as object}

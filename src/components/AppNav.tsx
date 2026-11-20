@@ -186,7 +186,6 @@ export function SideRail() {
             accessibilityState={{ selected: active }}
             accessibilityLabel={item.label}
             ringRadius={16}
-            hasTVPreferredFocus={active}
             style={{
               width: 88,
               height: 68,

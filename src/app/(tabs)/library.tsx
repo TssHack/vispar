@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/States';
 import { Text } from '@/components/Text';
 import { Art } from '@/components/Art';
 import { useLayout } from '@/hooks/useLayout';
+import { useFocusClaim } from '@/lib/focusClaim';
 import { clearFavorites, clearHistory, continueWatching, history, isFinished, removeProgress, useFavorites, useProgressMap, type Progress } from '@/library/store';
 import { confirm } from '@/lib/confirm';
 import { faClock, faNum } from '@/lib/format';
@@ -68,6 +69,7 @@ export default function Library() {
   const cont = useMemo(() => continueWatching(progress), [progress]);
   const hist = useMemo(() => history(progress), [progress]);
   const phone = !isTV && !isWide;
+  const focus = useFocusClaim(isTV);
 
   const usable = Math.min(width - (isTV ? 96 : 0), isWide ? maxContent : width) - gutter * 2;
   const gap = isTV ? 22 : isWide ? 18 : 10;
@@ -119,7 +121,7 @@ export default function Library() {
         contentContainerStyle={container}
         ListHeaderComponent={header}
         ListEmptyComponent={<EmptyState title="لیست شما خالی است" body="با دکمه‌ی نشانک روی هر فیلم یا سریال، آن را به این لیست اضافه کنید." />}
-        renderItem={({ item, index }) => <PosterCard poster={fromSaved(item.poster)} width={posterCell} showType hasTVPreferredFocus={isTV && index === 0} />}
+        renderItem={({ item, index }) => <PosterCard poster={fromSaved(item.poster)} width={posterCell} showType hasTVPreferredFocus={focus.prefer(index)} onFocus={focus.claim} />}
       />
     );
   }
