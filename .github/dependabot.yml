@@ -9,6 +9,12 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
+      # Expo pins these to an exact version per SDK. Move them only with `npx expo install --fix`.
+      - dependency-name: react
+      - dependency-name: react-dom
+      - dependency-name: react-native
+      - dependency-name: react-native-svg
+      - dependency-name: '@react-native-async-storage/async-storage'
     groups:
       minor-and-patch:
         update-types: [minor, patch]
