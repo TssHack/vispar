@@ -3,6 +3,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Poster } from '@/api/types';
 import { useLayout } from '@/hooks/useLayout';
+import { useFocusClaim } from '@/lib/focusClaim';
+import { SIDE_RAIL_WIDTH } from '@/lib/tvLayout';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { PosterCard } from './PosterCard';
@@ -43,13 +45,14 @@ export function CatalogGrid({
   const { colors } = useTheme();
   const { width, gutter, isTV, isWide, posterWidth } = useLayout();
   const insets = useSafeAreaInsets();
-  const railWidth = isTV ? 96 : 0;
+  const railWidth = isTV ? SIDE_RAIL_WIDTH : 0;
   const usable = Math.min(width - railWidth, isWide ? 1440 : width) - gutter * 2;
   const gap = isTV ? 22 : isWide ? 18 : 10;
   const minCell = isWide || isTV ? posterWidth : Math.round(posterWidth * 0.88);
   const columns = Math.max(3, Math.floor((usable + gap) / (minCell + gap)));
   const cell = Math.floor((usable - gap * (columns - 1)) / columns);
   const phone = !isTV && !isWide;
+  const focus = useFocusClaim(isTV);
 
   const Header = (
     <View style={{ gap: 14, paddingBottom: 16 }}>
@@ -91,7 +94,7 @@ export function CatalogGrid({
       }
       ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.accent} style={{ marginVertical: 24 }} /> : undefined}
       renderItem={({ item, index }) => (
-        <PosterCard poster={item} width={cell} showType={showType} hasTVPreferredFocus={isTV && index === 0} />
+        <PosterCard poster={item} width={cell} showType={showType} hasTVPreferredFocus={focus.prefer(index)} onFocus={focus.claim} />
       )}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.5}
