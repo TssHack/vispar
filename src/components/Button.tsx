@@ -61,7 +61,8 @@ export function Button({
           height,
           minWidth: height,
           paddingHorizontal: iconOnly ? 0 : 18,
-          overflow: 'hidden',
+          // No `overflow: 'hidden'`: the focus ring sits 4 dp outside the button and would be clipped,
+          // leaving TV users with no way to see which button is focused.
           borderRadius: radius.button,
           backgroundColor: v.bg,
           borderWidth: v.border ? 1 : 0,

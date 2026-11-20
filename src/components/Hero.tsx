@@ -142,10 +142,12 @@ export function HeroCarousel({ items, loading, preferredFocus }: { items: Poster
               accessibilityRole="tab"
               accessibilityState={{ selected: i === index }}
               accessibilityLabel={`اسلاید ${faNum(i + 1)}: ${p.title}`}
-              ring={false}
+              ringRadius={6}
               style={{ paddingVertical: 8, paddingHorizontal: 2 }}
             >
-              <View style={{ width: i === index ? 22 : 7, height: 7, borderRadius: 4, backgroundColor: i === index ? colors.accent : 'rgba(255,255,255,0.35)' }} />
+              {({ focused }) => (
+                <View style={{ width: i === index || focused ? 22 : 7, height: 7, borderRadius: 4, backgroundColor: i === index || focused ? colors.accent : 'rgba(255,255,255,0.35)' }} />
+              )}
             </Focusable>
           ))}
         </View>
