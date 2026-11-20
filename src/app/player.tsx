@@ -74,13 +74,14 @@ function PillButton({ icon, text, label, onPress }: { icon: IconName; text: stri
   );
 }
 
-function MenuRow({ label, sub, selected, onPress }: { label: string; sub?: string; selected?: boolean; onPress: () => void }) {
+function MenuRow({ label, sub, selected, preferred, onPress }: { label: string; sub?: string; selected?: boolean; preferred?: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   return (
     <Focusable
       onPress={onPress}
       accessibilityRole="menuitem"
       accessibilityState={{ selected: !!selected }}
+      {...(preferred ? ({ hasTVPreferredFocus: true } as object) : {})}
       ringRadius={12}
       style={{ minHeight: 48, paddingHorizontal: 14, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: selected ? 'rgba(255,255,255,0.1)' : 'transparent' }}
     >
@@ -192,6 +193,15 @@ export default function PlayerScreen() {
   const [visible, setVisible] = useState(true);
   const [menu, setMenu] = useState<Menu>(null);
   const [scrubbing, setScrubbing] = useState(false);
+  /** TV: which control takes focus when the overlay appears. Left/right on a hidden overlay start a seek, so the bar gets it. */
+  const [entry, setEntry] = useState<'play' | 'seek'>('play');
+  const [seekFocused, setSeekFocused] = useState(false);
+  useEffect(() => {
+    // The overlay unmounts without a blur event, so forget the focus state when it hides.
+    if (visible) return;
+    setSeekFocused(false);
+    setEntry('play');
+  }, [visible]);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const poke = useCallback(() => {
     setVisible(true);
@@ -343,6 +353,10 @@ export default function PlayerScreen() {
   // ---------- remote control (Android TV) ----------
   // With the controls hidden the D-pad drives playback directly; with them shown it moves focus
   // and every key press just keeps them on screen.
+  //
+  // Left/right seek in two cases: the overlay is hidden (it then opens with the seek bar focused, so
+  // the next presses keep seeking instead of moving focus), or the seek bar has focus (it keeps
+  // left/right to itself through nextFocusLeft/Right). Media controls stay left-to-right.
   useRemote((k) => {
     if (!isTV) return;
     if (k === 'playPause') toggle();
@@ -351,13 +365,16 @@ export default function PlayerScreen() {
     else if (k === 'rewind') seekBy(-skip * 2);
     else if (k === 'fastForward') seekBy(skip * 2);
     else if (!visible && !menu && !ended) {
-      if (k === 'left') seekBy(-skip);
-      else if (k === 'right') seekBy(skip);
-      else if (k === 'select') toggle();
-      else if (k === 'up' || k === 'down' || k === 'menu') {
-        /* fall through to show controls */
-      } else return;
-    }
+      if (k === 'left' || k === 'right') {
+        seekBy(k === 'right' ? skip : -skip);
+        setEntry('seek');
+      } else if (k === 'select') {
+        toggle();
+        setEntry('play');
+      } else if (k === 'up' || k === 'down' || k === 'menu') setEntry('play');
+      else return;
+    } else if (visible && seekFocused && !menu && (k === 'left' || k === 'right')) seekBy(k === 'right' ? skip : -skip);
+    else if (k !== 'left' && k !== 'right' && k !== 'up' && k !== 'down' && k !== 'select' && k !== 'menu') return;
     poke();
   });
   useEffect(() => {
@@ -413,7 +430,7 @@ export default function PlayerScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <StatusBar hidden={full} style="light" />
-      <VideoView player={player} style={{ flex: 1 }} contentFit={fit} nativeControls={false} allowsPictureInPicture startsPictureInPictureAutomatically />
+      <VideoView player={player} style={{ flex: 1 }} contentFit={fit} nativeControls={false} allowsPictureInPicture={!isTV} startsPictureInPictureAutomatically={!isTV} />
 
       {/* Subtitles sit above the video and below the controls, and never take a tap. */}
       {subs.cues.length ? (
@@ -476,7 +493,7 @@ export default function PlayerScreen() {
               }}
               accessibilityRole="button"
               accessibilityLabel={isPlaying ? 'توقف' : 'پخش'}
-              hasTVPreferredFocus={isTV}
+              hasTVPreferredFocus={isTV && entry === 'play'}
               ringRadius={42}
               style={{ width: big ? 84 : 72, height: big ? 84 : 72, borderRadius: 42, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent }}
             >
@@ -486,7 +503,21 @@ export default function PlayerScreen() {
           </View>
 
           <LinearGradient pointerEvents="box-none" colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.75)']} style={{ paddingTop: 40, paddingBottom: bottom, paddingHorizontal: side, gap: 6 }}>
-            <SeekBar position={currentTime} duration={duration} buffered={player.bufferedPosition} accent={colors.accent} onSeek={seekTo} onScrubbing={setScrubbing} />
+            <SeekBar
+              position={currentTime}
+              duration={duration}
+              buffered={player.bufferedPosition}
+              accent={colors.accent}
+              onSeek={seekTo}
+              onScrubbing={setScrubbing}
+              tv={isTV}
+              preferredFocus={isTV && entry === 'seek'}
+              onFocusChange={setSeekFocused}
+              onSelect={() => {
+                toggle();
+                poke();
+              }}
+            />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, direction: 'ltr' }}>
               <CtrlButton icon={muted ? 'mute' : 'volume'} label={muted ? 'صدا روشن' : 'بی‌صدا'} onPress={() => (player.muted = !player.muted)} size={44} iconSize={22} />
               {ctx.next ? <CtrlButton icon="next" label="قسمت بعد" onPress={goNext} size={44} iconSize={22} /> : null}
@@ -528,6 +559,7 @@ export default function PlayerScreen() {
                     key={r}
                     label={r === 1 ? 'عادی' : faNum(`${r}x`)}
                     selected={Math.abs(playbackRate - r) < 0.01}
+                    preferred={isTV && Math.abs(playbackRate - r) < 0.01}
                     onPress={() => {
                       player.playbackRate = r;
                       setMenu(null);
@@ -540,6 +572,7 @@ export default function PlayerScreen() {
                       key="off"
                       label="خاموش"
                       selected={!subs.cues.length && !subs.activeTrack}
+                      preferred={isTV && !subs.tracks.some((t) => subs.activeTrack === t.id)}
                       onPress={() => {
                         subs.selectTrack(null);
                         subs.setSidecarOff();
@@ -552,6 +585,7 @@ export default function PlayerScreen() {
                         label={t.label || t.language}
                         sub={current && subtitleHint(current) === 'hard' ? 'زیرنویس داخل تصویر' : 'زیرنویس داخلی فایل'}
                         selected={subs.activeTrack === t.id}
+                        preferred={isTV && subs.activeTrack === t.id}
                         onPress={() => {
                           subs.selectTrack({ id: t.id, language: t.language });
                           setMenu(null);
@@ -588,12 +622,14 @@ export default function PlayerScreen() {
                       label={s.quality || qualityLabel(s.quality)}
                       sub={[qualityLabel(s.quality), s.type.toUpperCase(), isStreamOnly(s) ? 'پخش آنلاین' : null].filter(Boolean).join(' · ')}
                       selected={current?.url === s.url}
+                      preferred={isTV && current?.url === s.url}
                       onPress={() => (current?.url === s.url ? setMenu(null) : switchSource(s))}
                     />
                   ))
                 : (
                     <>
                       <MenuRow
+                        preferred={isTV}
                         label={`نمای تصویر: ${FIT_LABEL[fit]}`}
                         sub="جا شدن، پر کردن صفحه یا کشیدن"
                         onPress={() => setFit(FIT_NEXT[fit])}
