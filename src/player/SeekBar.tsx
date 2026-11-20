@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { findNodeHandle, Pressable, View, type GestureResponderEvent, type HostInstance, type LayoutChangeEvent } from 'react-native';
+import { findNodeHandle, Platform, Pressable, View, type GestureResponderEvent, type HostInstance, type LayoutChangeEvent } from 'react-native';
 
 import { Text } from '@/components/Text';
 import { faClock } from '@/lib/format';
@@ -33,7 +33,8 @@ export function SeekBar({ position, duration, buffered, accent, onSeek, onScrubb
   const self = useRef<HostInstance>(null);
   const [handle, setHandle] = useState<number | undefined>(undefined);
   useEffect(() => {
-    if (tv) setHandle(findNodeHandle(self.current) ?? undefined);
+    // nextFocusLeft/Right are Android view props. findNodeHandle throws on web (the ?tv=1 preview).
+    if (tv && Platform.OS === 'android') setHandle(findNodeHandle(self.current) ?? undefined);
   }, [tv]);
   const ratio = (x: number) => Math.min(1, Math.max(0, x / (width.current || 1)));
   const shown = drag ?? (duration ? position / duration : 0);
