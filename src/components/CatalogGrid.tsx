@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Poster } from '@/api/types';
 import { useLayout } from '@/hooks/useLayout';
 import { useFocusClaim } from '@/lib/focusClaim';
+import { SIDE_RAIL_WIDTH } from '@/lib/tvLayout';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { PosterCard } from './PosterCard';
@@ -44,7 +45,7 @@ export function CatalogGrid({
   const { colors } = useTheme();
   const { width, gutter, isTV, isWide, posterWidth } = useLayout();
   const insets = useSafeAreaInsets();
-  const railWidth = isTV ? 96 : 0;
+  const railWidth = isTV ? SIDE_RAIL_WIDTH : 0;
   const usable = Math.min(width - railWidth, isWide ? 1440 : width) - gutter * 2;
   const gap = isTV ? 22 : isWide ? 18 : 10;
   const minCell = isWide || isTV ? posterWidth : Math.round(posterWidth * 0.88);

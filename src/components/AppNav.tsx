@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 
 import { useLayout } from '@/hooks/useLayout';
+import { railMetrics, SIDE_RAIL_WIDTH } from '@/lib/tvLayout';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Focusable } from './Focusable';
@@ -167,16 +168,20 @@ export function TopNav() {
 /** Android TV: vertical rail on the right (RTL start), moved through with the D-pad. */
 export function SideRail() {
   const { colors } = useTheme();
+  const { height } = useLayout();
   const isActive = useActive();
+  const items = [...NAV, SETTINGS];
+  // Sized from the window: six 68 dp items do not fit a 540 dp TV screen and Settings fell off the bottom.
+  const m = railMetrics(height, items.length);
   return (
     <View
       accessibilityRole="tablist"
-      style={{ width: 112, paddingVertical: 28, alignItems: 'center', gap: 10, backgroundColor: colors.bg, borderStartWidth: 1, borderColor: colors.line }}
+      style={{ width: SIDE_RAIL_WIDTH, paddingVertical: m.padV, alignItems: 'center', gap: m.gap, backgroundColor: colors.bg, borderStartWidth: 1, borderColor: colors.line }}
     >
-      <View style={{ marginBottom: 18 }}>
-        <LogoMark size={44} onDark />
+      <View style={{ marginBottom: m.logoGap - m.gap }}>
+        <LogoMark size={m.logo} onDark />
       </View>
-      {[...NAV, SETTINGS].map((item) => {
+      {items.map((item) => {
         const active = isActive(item);
         return (
           <Focusable
@@ -188,7 +193,7 @@ export function SideRail() {
             ringRadius={16}
             style={{
               width: 88,
-              height: 68,
+              height: m.item,
               borderRadius: 16,
               alignItems: 'center',
               justifyContent: 'center',

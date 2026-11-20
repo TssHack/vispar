@@ -14,6 +14,7 @@ import { Text } from '@/components/Text';
 import { Art } from '@/components/Art';
 import { useLayout } from '@/hooks/useLayout';
 import { useFocusClaim } from '@/lib/focusClaim';
+import { SIDE_RAIL_WIDTH } from '@/lib/tvLayout';
 import { clearFavorites, clearHistory, continueWatching, history, isFinished, removeProgress, useFavorites, useProgressMap, type Progress } from '@/library/store';
 import { confirm } from '@/lib/confirm';
 import { faClock, faNum } from '@/lib/format';
@@ -71,7 +72,7 @@ export default function Library() {
   const phone = !isTV && !isWide;
   const focus = useFocusClaim(isTV);
 
-  const usable = Math.min(width - (isTV ? 96 : 0), isWide ? maxContent : width) - gutter * 2;
+  const usable = Math.min(width - (isTV ? SIDE_RAIL_WIDTH : 0), isWide ? maxContent : width) - gutter * 2;
   const gap = isTV ? 22 : isWide ? 18 : 10;
   const cols = (min: number) => Math.max(2, Math.floor((usable + gap) / (min + gap)));
   const posterCols = Math.max(3, cols(isWide || isTV ? posterWidth : posterWidth * 0.88));

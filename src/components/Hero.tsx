@@ -11,6 +11,7 @@ import { faNum, faYear, joinMeta } from '@/lib/format';
 import { appPlatform } from '@/lib/platform';
 import { pickSource } from '@/lib/sources';
 import { getSettings, useSetting } from '@/settings/store';
+import { tvHeroHeight, tvHeroTitleSize } from '@/lib/tvLayout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { cinema, radius } from '@/theme/tokens';
 
@@ -23,10 +24,12 @@ import { Skeleton } from './States';
 import { Text } from './Text';
 
 function HeroSlide({ poster, preferredFocus }: { poster: Poster; preferredFocus?: boolean }) {
-  const { isWide, isTV } = useLayout();
+  const { isWide, isTV, height: winH } = useLayout();
   const fav = useIsFavorite(poster.type, poster.id);
   const synopsis = parseDescription(poster.description).synopsis;
   const big = isWide || isTV;
+  /** A 540 dp TV: tighter padding and one line of synopsis, so the slide fits the shorter hero. */
+  const shortTV = isTV && winH < 640;
   const meta = joinMeta(faYear(poster.year), poster.genres.map((g) => g.title).slice(0, 2).join('، '), poster.duration ? faNum(poster.duration) : null);
   const onPlay = () => {
     const src = poster.type === 'movie' ? pickSource(poster.sources, getSettings().defaultQuality, { platform: appPlatform() }) : null;
@@ -37,9 +40,9 @@ function HeroSlide({ poster, preferredFocus }: { poster: Poster; preferredFocus?
     <>
       <LinearGradient colors={['rgba(8,8,12,0)', 'rgba(8,8,12,0.55)', cinema.scrim]} locations={[0.25, 0.6, 1]} style={StyleSheet.absoluteFill} />
       {big ? <LinearGradient colors={['rgba(8,8,12,0.9)', 'rgba(8,8,12,0)']} start={{ x: 1, y: 0 }} end={{ x: 0.35, y: 0 }} style={StyleSheet.absoluteFill} /> : null}
-      <View style={{ padding: big ? 48 : 20, paddingBottom: big ? 56 : 36, gap: 10, maxWidth: big ? 640 : undefined }}>
+      <View style={{ padding: shortTV ? 28 : big ? 48 : 20, paddingBottom: shortTV ? 32 : big ? 56 : 36, gap: shortTV ? 8 : 10, maxWidth: big ? 640 : undefined }}>
         <Tag label={poster.type === 'serie' ? 'سریال جدید' : 'تازه اضافه شده'} />
-        <Text size={isTV ? 56 : isWide ? 60 : 32} weight={800} color={cinema.onImage} line={1.15} numberOfLines={2}>
+        <Text size={isTV ? tvHeroTitleSize(winH) : isWide ? 60 : 32} weight={800} color={cinema.onImage} line={1.15} numberOfLines={2}>
           {poster.title}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -51,7 +54,7 @@ function HeroSlide({ poster, preferredFocus }: { poster: Poster; preferredFocus?
           ) : null}
         </View>
         {big && synopsis ? (
-          <Text size={isTV ? 17 : 16} color={cinema.onImage2} line={1.8} numberOfLines={2}>
+          <Text size={isTV ? 17 : 16} color={cinema.onImage2} line={1.8} numberOfLines={shortTV ? 1 : 2}>
             {synopsis}
           </Text>
         ) : null}
@@ -80,7 +83,7 @@ export function HeroCarousel({ items, loading, preferredFocus }: { items: Poster
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const fade = useRef(new Animated.Value(1)).current;
-  const height = isTV ? 470 : isWide ? Math.min(620, Math.max(460, width * 0.38)) : Math.min(width >= 600 ? 440 : 400, Math.max(300, Math.round(winH * 0.82)));
+  const height = isTV ? tvHeroHeight(winH) : isWide ? Math.min(620, Math.max(460, width * 0.38)) : Math.min(width >= 600 ? 440 : 400, Math.max(300, Math.round(winH * 0.82)));
   const count = items.length;
   const indexRef = useRef(index);
   indexRef.current = index;
