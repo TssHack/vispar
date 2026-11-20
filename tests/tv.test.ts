@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 import { createFocusClaim } from '@/lib/focusClaim';
@@ -48,5 +49,32 @@ describe('TV layout', () => {
     expect(tvHeroHeight(540)).toBeLessThanOrEqual(540 * 0.7);
     expect(tvHeroHeight(1080)).toBe(470);
     expect(tvHeroTitleSize(540)).toBeLessThan(tvHeroTitleSize(720));
+  });
+});
+
+describe('Android TV build uses the matching stable TV fork', () => {
+  const { pickTvosVersion } = createRequire(import.meta.url)('../scripts/tvos-version.js') as { pickTvosVersion: (rn: string, v: string[]) => string | null };
+  const published = ['0.87.1-1', '0.88.0-0rc2', '0.88.0-0', '0.88.1-0', '0.88.1-2', '0.88.1-10', '0.88.101-tv.0'];
+
+  it('picks the newest stable fork release of the exact react-native version', () => {
+    expect(pickTvosVersion('0.88.1', published)).toBe('0.88.1-10');
+    expect(pickTvosVersion('0.88.0', published)).toBe('0.88.0-0');
+  });
+
+  it('never picks a release candidate or another version', () => {
+    expect(pickTvosVersion('0.88.2', published)).toBeNull();
+    expect(pickTvosVersion('0.88.0', ['0.88.0-0rc2'])).toBeNull();
+  });
+
+  it('refuses a react-native range, so the TV build cannot guess', () => {
+    expect(() => pickTvosVersion('^0.88.1', published)).toThrow();
+  });
+
+  it('the workflow reads the version from package.json instead of a hand-written pin', () => {
+    const wf = readFileSync('.github/workflows/android.yml', 'utf8');
+    expect(wf).toContain('node scripts/tvos-version.js');
+    expect(wf).not.toMatch(/react-native-tvos@\d/);
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { dependencies: Record<string, string> };
+    expect(pkg.dependencies['react-native']).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });
