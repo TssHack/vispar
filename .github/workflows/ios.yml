@@ -94,7 +94,7 @@ jobs:
           unzip -l "out/Vispar-${VERSION}-ios-simulator.zip" | grep -E "Vispar.app/(Info.plist|main.jsbundle)"
           ls -la out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: vispar-ios
           path: out/*
