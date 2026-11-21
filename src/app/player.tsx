@@ -467,6 +467,21 @@ export default function PlayerScreen() {
         </View>
       ) : null}
 
+      {/*
+        Android TV: a key press travels down the view tree only along the focused view. With the
+        controls hidden nothing was focused, so no remote key reached the app (#53): this invisible view
+        holds focus meanwhile, and the remote handler above does the rest. It has no onPress, so select
+        is handled once, by the remote handler.
+      */}
+      {isTV && !visible && !menu ? (
+        <View
+          focusable
+          accessible={false}
+          {...({ hasTVPreferredFocus: true } as object)}
+          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
+        />
+      ) : null}
+
       {/* Overlay controls */}
       {visible && status !== 'error' && !ended && !blocked && !unplayable ? (
         <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'space-between' }}>
