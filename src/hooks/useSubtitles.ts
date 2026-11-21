@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
 import type { Source } from '@/api/types';
+import { containerOf } from '@/lib/containers';
+import { playableUrl } from '@/lib/media';
+import { httpRangeFetcher, readMkvIndex, readMkvTrack, type MkvIndex, type MkvTextTrack, type RangeFetcher } from '@/lib/subtitles/mkv';
 import { getSubtitleChoice, setSubtitleChoice, useSubtitleChoice } from '@/lib/subtitles/store';
 import { loadSubtitle, probeSidecar } from '@/lib/subtitles/load';
 import { type Cue } from '@/lib/subtitles/parse';
@@ -61,6 +64,13 @@ type RawTrack = { id?: string; label: string; language: string; name?: string; i
 const toInfo = (list: RawTrack[] | undefined): TrackInfo[] =>
   (list ?? []).map((t, index) => ({ id: t.id ?? String(index), language: t.language ?? '', label: t.label ?? '', name: t.name, isDefault: t.isDefault }));
 
+/** Tracks read from the MKV file itself get ids `mkv:<track number>`, so they never collide with native ids. */
+const MKV_PREFIX = 'mkv:';
+const mkvInfo = (t: MkvTextTrack): TrackInfo => ({ id: `${MKV_PREFIX}${t.number}`, language: t.language, label: t.name || t.language, name: t.name, isDefault: t.isDefault });
+
+type MkvState = { status: 'none' | 'loading' | 'ready' | 'failed'; tracks: MkvTextTrack[] };
+const MKV_NONE: MkvState = { status: 'none', tracks: [] };
+
 const fingerprintOf = (list: TrackInfo[]) => list.map((t) => `${t.id}:${t.language}:${t.name ?? ''}`).join('|');
 
 export function useSubtitles(options: {
@@ -86,6 +96,17 @@ export function useSubtitles(options: {
   const [tracks, setTracks] = useState<TrackInfo[]>([]);
   /** Whether the current source's embedded tracks have been reported. Always true on web. */
   const [tracksKnown, setTracksKnown] = useState(!NATIVE_TRACKS);
+  /**
+   * The subtitle read out of the MKV file itself (#54). It works on every platform (browsers never
+   * expose a Matroska subtitle, and Android draws it tiny), so for an MKV it comes first; Android's
+   * own track and a sidecar are the fallbacks when the file has no usable index.
+   */
+  const [mkv, setMkv] = useState<MkvState>(MKV_NONE);
+  const [mkvTrack, setMkvTrack] = useState<number | null>(null);
+  const mkvCtx = useRef<{ index: MkvIndex; fetchRange: RangeFetcher } | null>(null);
+  const mkvRun = useRef(0);
+  const mkvLoad = useRef<{ n: number; abort: { aborted: boolean } }>({ n: 0, abort: { aborted: false } });
+  const isMkv = !!source?.url && containerOf(source) === 'mkv';
 
   // Bumped on every new request and on every title change, so a slow response for a superseded
   // request is dropped instead of overwriting the current state.
@@ -107,6 +128,13 @@ export function useSubtitles(options: {
     setActiveTrack(null);
     setOffsetState(getSubtitleChoice(key ?? '').offsetMs ?? 0);
   }, [key]);
+
+  /** Stops reading lines of the current MKV track and forgets it. */
+  const stopMkvTrack = useCallback(() => {
+    mkvLoad.current.abort.aborted = true;
+    mkvLoad.current = { n: mkvLoad.current.n + 1, abort: { aborted: false } };
+    setMkvTrack(null);
+  }, []);
 
   // A new source (quality switch, next episode) has its own tracks: forget the old list and wait for
   // the player to report the new one, with a timeout so a silent player cannot block sidecars forever.
@@ -180,14 +208,100 @@ export function useSubtitles(options: {
     setSidecarUrl(null);
   }, []);
 
+  /** Reads one track of the MKV and shows its lines as they arrive, nearest to the playback position first. */
+  const loadMkvTrack = useCallback(
+    (number: number) => {
+      const ctx = mkvCtx.current;
+      const track = ctx?.index.tracks.find((t) => t.number === number);
+      if (!ctx || !track) return;
+      stopMkvTrack();
+      const load = mkvLoad.current;
+      clearSidecar();
+      showTrack(null); // never two subtitles: Android's own copy goes
+      setMkvTrack(number);
+      setStatus('loading');
+      const current = () => load === mkvLoad.current && !load.abort.aborted;
+      void readMkvTrack(ctx.fetchRange, ctx.index, track, {
+        from: player.currentTime || 0,
+        signal: load.abort,
+        onProgress: (next) => {
+          if (!current()) return;
+          setCues(next);
+          setStatus('ready');
+        },
+      })
+        .then((all) => {
+          if (!current()) return;
+          setCues(all);
+          setStatus(all.length ? 'ready' : 'missing');
+          if (!all.length) setMkvTrack(null);
+        })
+        .catch(() => {
+          if (current()) setStatus('missing');
+        });
+    },
+    [player, stopMkvTrack, clearSidecar, showTrack],
+  );
+
+  // An MKV source: read its subtitle index from the file, on every platform, from the same URL the
+  // player uses (the desktop and web relays forward Range). Waits for nothing else: it needs only the
+  // file. A failure (no subtitle entries in the index, Range refused) leaves the native and sidecar
+  // paths to do what they can.
+  useEffect(() => {
+    mkvRun.current++;
+    mkvCtx.current = null;
+    stopMkvTrack();
+    if (!source?.url || !isMkv || !enabled || saved.off || saved.url) {
+      setMkv(MKV_NONE);
+      return;
+    }
+    const run = mkvRun.current;
+    const ctrl = typeof AbortController === 'function' ? new AbortController() : undefined;
+    const fetchRange = httpRangeFetcher(playableUrl(source.url), ctrl?.signal);
+    setMkv({ status: 'loading', tracks: [] });
+    readMkvIndex(fetchRange)
+      .then((index) => {
+        if (run !== mkvRun.current) return;
+        if (typeof index !== 'object') return setMkv({ status: 'failed', tracks: [] });
+        mkvCtx.current = { index, fetchRange };
+        setMkv({ status: 'ready', tracks: index.tracks });
+        const pick = pickTrack(index.tracks.map(mkvInfo), preferredLanguage, saved.language);
+        if (pick) loadMkvTrack(Number(pick.id.slice(MKV_PREFIX.length)));
+      })
+      .catch(() => {
+        if (run === mkvRun.current) setMkv({ status: 'failed', tracks: [] });
+      });
+    return () => ctrl?.abort();
+    // The language choice is read once per source; changing it later goes through the menu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source?.url, isMkv, enabled, saved.off, saved.url]);
+
+  /** True while the file's own subtitle is being read or is available: the other paths stand back. */
+  const mkvOwns = isMkv && (mkv.status === 'loading' || mkv.status === 'ready');
+
   const selectTrack = useCallback(
     (track: { id: string; language: string } | null) => {
-      if (!NATIVE_TRACKS) return;
-      if (track) clearSidecar();
+      if (track?.id.startsWith(MKV_PREFIX)) {
+        loadMkvTrack(Number(track.id.slice(MKV_PREFIX.length)));
+        if (key) setSubtitleChoice(key, { language: track.language, off: false, url: undefined });
+        return;
+      }
+      if (!track) {
+        stopMkvTrack();
+        setCues([]);
+      }
+      if (!NATIVE_TRACKS) {
+        if (!track && key) setSubtitleChoice(key, { off: true });
+        return;
+      }
+      if (track) {
+        stopMkvTrack();
+        clearSidecar();
+      }
       showTrack(track ? track.id : null);
       if (key) setSubtitleChoice(key, track ? { language: track.language, off: false, url: undefined } : { off: true });
     },
-    [showTrack, clearSidecar, key],
+    [showTrack, clearSidecar, stopMkvTrack, loadMkvTrack, key],
   );
 
   // Once per source, after the tracks are known: pick a track, or make sure none shows. "None" has to
@@ -196,6 +310,12 @@ export function useSubtitles(options: {
   useEffect(() => {
     if (!NATIVE_TRACKS || !tracksKnown || !source?.url) return;
     if (autoSelected.current === source.url) return;
+    // The file's own subtitle is being read or shown by us: Android's copy must stay off. Not marked
+    // as done, so the native track is still picked if reading the file fails.
+    if (mkvOwns) {
+      showTrack(null);
+      return;
+    }
     if (!enabled || saved.off || saved.url) {
       autoSelected.current = source.url;
       showTrack(null);
@@ -211,7 +331,7 @@ export function useSubtitles(options: {
     }
     const pick = pickTrack(tracks, preferredLanguage, saved.language);
     if (pick) showTrack(pick.id);
-  }, [tracksKnown, tracks, cues.length, source?.url, enabled, saved.off, saved.url, saved.language, preferredLanguage, showTrack]);
+  }, [tracksKnown, tracks, cues.length, source?.url, enabled, saved.off, saved.url, saved.language, preferredLanguage, showTrack, mkvOwns]);
 
   // Turning subtitles off in settings while playing hides an embedded track at once.
   useEffect(() => {
@@ -222,11 +342,12 @@ export function useSubtitles(options: {
   const showCues = useCallback(
     (next: Cue[], url: string) => {
       if (NATIVE_TRACKS && player.subtitleTrack) showTrack(null);
+      stopMkvTrack();
       setCues(next);
       setSidecarUrl(url);
       setStatus('ready');
     },
-    [player, showTrack],
+    [player, showTrack, stopMkvTrack],
   );
 
   const loadFromUrl = useCallback(
@@ -251,7 +372,15 @@ export function useSubtitles(options: {
    * would double it), when an embedded track covers the case, and until the tracks are known.
    */
   const probe = useCallback(() => {
-    const action = planSidecar({ source, enabled, autoProbe, hasEmbeddedTracks: NATIVE_TRACKS && tracks.length > 0, tracksKnown, saved, probedFor: probedFor.current });
+    const action = planSidecar({
+      source,
+      enabled,
+      autoProbe,
+      hasEmbeddedTracks: (NATIVE_TRACKS && tracks.length > 0) || mkv.status === 'ready',
+      tracksKnown: tracksKnown && !(isMkv && mkv.status === 'loading'),
+      saved,
+      probedFor: probedFor.current,
+    });
     if (action === 'disabled') {
       setStatus('disabled');
     } else if (action === 'load-saved' && saved.url) {
@@ -265,22 +394,23 @@ export function useSubtitles(options: {
         if (result.ok) showCues(result.cues, result.url);
         else setStatus('missing');
       });
-    } else if (action === 'none' && tracks.length) {
+    } else if (action === 'none' && tracks.length && !mkvOwns) {
       setStatus('ready');
     }
-  }, [source, enabled, autoProbe, tracks.length, tracksKnown, saved, loadFromUrl, showCues]);
+  }, [source, enabled, autoProbe, tracks.length, tracksKnown, saved, loadFromUrl, showCues, mkv.status, isMkv, mkvOwns]);
 
   // Keyed on the inputs, not on `probe`: depending on the callback would re-run whenever it is
   // recreated, which is not a reason for another network request.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => probe(), [source?.url, enabled, autoProbe, saved.url, saved.off, tracks.length, tracksKnown]);
+  useEffect(() => probe(), [source?.url, enabled, autoProbe, saved.url, saved.off, tracks.length, tracksKnown, mkv.status]);
 
   const setSidecarOff = useCallback(() => {
+    stopMkvTrack();
     clearSidecar();
     showTrack(null);
     setStatus('disabled');
     if (key) setSubtitleChoice(key, { off: true, url: undefined });
-  }, [key, clearSidecar, showTrack]);
+  }, [key, clearSidecar, showTrack, stopMkvTrack]);
 
   const turnOn = useCallback(() => {
     probedFor.current = null;
@@ -299,8 +429,9 @@ export function useSubtitles(options: {
   );
 
   return {
-    tracks: tracks.map((t) => ({ id: t.id, language: t.language, label: trackLabel(t) })),
-    activeTrack,
+    // The file's own tracks when we could read them (Android's list would only repeat them).
+    tracks: (mkv.status === 'ready' ? mkv.tracks.map(mkvInfo) : tracks).map((t) => ({ id: t.id, language: t.language, label: trackLabel(t) })),
+    activeTrack: mkvTrack !== null ? `${MKV_PREFIX}${mkvTrack}` : activeTrack,
     // Cues are returned unshifted: the overlay applies `offsetMs` in its lookup, so applying it here
     // as well would double the correction.
     cues,

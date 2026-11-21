@@ -43,9 +43,29 @@ function cleanLine(raw: string): string {
   return raw
     .replace(/\{\\[^}]*\}/g, '') // ASS/SSA override blocks
     .replace(/<\/?[a-zA-Z][^>]*>/g, '') // <i>, <b>, <font ...>
-    .replace(/\u200f|\u200e/g, '') // stray direction marks
+    .replace(/[\u200e\u200f\u202a-\u202e]/g, '') // stray direction marks and embeddings (RLE/PDF)
     .replace(/\s+$/g, '')
     .trim();
+}
+
+/**
+ * Lines of one subtitle event, cleaned the same way as file cues. `ass` takes a Matroska ASS/SSA
+ * block (`ReadOrder,Layer,Style,Name,MarginL,MarginR,MarginV,Effect,Text`) or a Dialogue line, and
+ * keeps only the text, where `\N` and `\n` are line breaks.
+ */
+export function linesFromText(text: string, format: 'srt' | 'ass' = 'srt'): string[] {
+  let body = normaliseText(text);
+  if (format === 'ass') {
+    const fields = body.replace(/^Dialogue:\s*/i, '').split(',');
+    // Matroska blocks have 9 fields (ReadOrder first); Dialogue lines have 10 (Layer first, then Start, End).
+    const skip = /^Dialogue:/i.test(body) ? 9 : 8;
+    body = fields.length > skip ? fields.slice(skip).join(',') : body;
+    body = body.replace(/\\[Nn]/g, '\n');
+  }
+  return body
+    .split('\n')
+    .map(cleanLine)
+    .filter(Boolean);
 }
 
 /** Normalises a subtitle payload to text: strips a BOM and converts to plain CRLF-free lines. */
