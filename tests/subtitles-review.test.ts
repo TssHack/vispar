@@ -64,10 +64,15 @@ describe('sidecar probing order', () => {
 });
 
 describe('planSidecar', () => {
-  const base = { source: { url: 'http://x/a.mkv', quality: '1080' }, enabled: true, autoProbe: true, hasEmbeddedTracks: false, saved: {}, probedFor: null };
+  const base = { source: { url: 'http://x/a.mkv', quality: '1080' }, enabled: true, autoProbe: true, hasEmbeddedTracks: false, tracksKnown: true, saved: {}, probedFor: null };
 
   it('probes when nothing else applies', () => {
     expect(planSidecar(base)).toBe('probe');
+  });
+  it('waits for the container before probing, so a sidecar never lands on top of an embedded track', () => {
+    expect(planSidecar({ ...base, tracksKnown: false })).toBe('none');
+    // A URL the user chose is still honoured straight away.
+    expect(planSidecar({ ...base, tracksKnown: false, saved: { url: 'http://x/a.srt' } })).toBe('load-saved');
   });
   it('never probes once the user turned subtitles off for the title', () => {
     expect(planSidecar({ ...base, saved: { off: true } })).toBe('disabled');
