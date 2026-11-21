@@ -147,7 +147,10 @@ export function useSubtitles(options: {
     const live = (player.availableSubtitleTracks ?? []) as RawTrack[];
     const now = e.subtitleTrack as RawTrack | null;
     if (!now) return setActiveTrack(null);
-    const index = live.findIndex((t) => t === now || (t.id !== undefined && t.id === now.id));
+    // `id` is Android-only. iOS sends a fresh object per event, so identity never matches there:
+    // find it by its fields instead, and use its index as the id, the same way `toInfo` does.
+    const same = (t: RawTrack) => (t.id !== undefined || now.id !== undefined ? t.id === now.id : t.language === now.language && t.label === now.label && (t.name ?? '') === (now.name ?? ''));
+    const index = live.findIndex(same);
     setActiveTrack(now.id ?? (index >= 0 ? String(index) : null));
   });
 
