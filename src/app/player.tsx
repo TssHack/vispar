@@ -36,6 +36,7 @@ import { SubtitleOverlay } from '@/components/SubtitleOverlay';
 import { useSubtitles } from '@/hooks/useSubtitles';
 import { subtitleHint } from '@/lib/subtitles/parse';
 import { subtitleKey } from '@/lib/subtitles/store';
+import { subtitleLinkFrom } from '@/lib/subtitles/tracks';
 import { getSettings, useSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -595,9 +596,30 @@ export default function PlayerScreen() {
                     subs.status === 'disabled' && current && subtitleHint(current) !== 'hard' ? (
                       <MenuRow key="turn-on" label="روشن کردن زیرنویس" sub="دوباره دنبال فایل زیرنویس می‌گردد" onPress={() => { subs.turnOn(); setMenu(null); }} />
                     ) : null,
-                    subs.tracks.length || subs.cues.length || subs.status === 'disabled' ? null : (
-                      <MenuRow key="none" label="زیرنویسی پیدا نشد" sub="از تنظیمات یا لینک می‌توانی اضافه کنی" onPress={() => setMenu(null)} />
+                    subs.tracks.length || subs.cues.length || subs.status === 'disabled' ? null : subs.status === 'idle' || subs.status === 'loading' ? (
+                      <MenuRow key="searching" label="در حال پیدا کردن زیرنویس…" sub="زیرنویس داخل فایل یا کنار آن" onPress={() => setMenu(null)} />
+                    ) : (
+                      <MenuRow key="none" label="زیرنویسی پیدا نشد" sub="لینک فایل ‎.srt یا ‎.vtt را کپی کنید و «چسباندن لینک زیرنویس» را بزنید" onPress={() => setMenu(null)} />
                     ),
+                    <MenuRow
+                      key="paste"
+                      label="چسباندن لینک زیرنویس"
+                      sub="لینک ‎.srt یا ‎.vtt از کلیپ‌بورد"
+                      onPress={async () => {
+                        setMenu(null);
+                        let text = '';
+                        try {
+                          text = await Clipboard.getStringAsync();
+                        } catch {
+                          return toast('دسترسی به کلیپ‌بورد داده نشد', 'alert');
+                        }
+                        const link = subtitleLinkFrom(text);
+                        if (!link) return toast('در کلیپ‌بورد لینک زیرنویس پیدا نشد', 'alert');
+                        toast('در حال بارگذاری زیرنویس…', 'subtitles');
+                        const ok = await subs.loadFromUrl(link);
+                        toast(ok ? 'زیرنویس اضافه شد' : 'این لینک زیرنویس قابل خواندن نبود', ok ? 'check' : 'alert');
+                      }}
+                    />,
                     <MenuRow
                       key="offset-down"
                       label="زیرنویس زودتر · ۰٫۵ ثانیه"
