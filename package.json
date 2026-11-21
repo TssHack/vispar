@@ -50,7 +50,7 @@
     "web": "expo start --web",
     "start:tv": "EXPO_TV=1 expo start",
     "prebuild:tv": "EXPO_TV=1 expo prebuild --clean",
-    "build:web": "expo export -p web && node scripts/pwa-postbuild.js",
+    "build:web": "expo export -p web && node scripts/pwa-postbuild.js && node scripts/prerender-seo.js",
     "brand:pwa": "node scripts/build-pwa-icons.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

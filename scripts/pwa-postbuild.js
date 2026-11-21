@@ -11,7 +11,7 @@ if (!fs.existsSync(file)) {
 }
 
 const before = fs.readFileSync(file, 'utf8');
-const after = injectHead(before, { site: process.env.SITE_URL || SITE_URL_DEFAULT });
+const after = injectHead(before, { site: process.env.SITE_URL || SITE_URL_DEFAULT, env: process.env });
 if (after !== before) {
   fs.writeFileSync(file, after);
   console.log('PWA and social tags injected into dist/index.html');

@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/States';
 import { Text } from '@/components/Text';
 import { Art } from '@/components/Art';
 import { useLayout } from '@/hooks/useLayout';
+import { usePageMeta } from '@/lib/pageMeta';
 import { useFocusClaim } from '@/lib/focusClaim';
 import { SIDE_RAIL_WIDTH } from '@/lib/tvLayout';
 import { clearFavorites, clearHistory, continueWatching, history, isFinished, removeProgress, useFavorites, useProgressMap, type Progress } from '@/library/store';
@@ -62,6 +63,7 @@ function HistoryRow({ p }: { p: Progress }) {
 
 export default function Library() {
   const { colors } = useTheme();
+  usePageMeta({ title: 'کتابخانه', path: null });
   const { gutter, isTV, isWide, width, posterWidth, cardWidth, maxContent } = useLayout();
   const insets = useSafeAreaInsets();
   const favorites = useFavorites();

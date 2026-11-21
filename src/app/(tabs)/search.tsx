@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { TextInput, View } from 'react-native';
 
 import { useSearch } from '@/api/hooks';
+import { usePageMeta } from '@/lib/pageMeta';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { Chip } from '@/components/Chip';
 import { Focusable } from '@/components/Focusable';
@@ -19,6 +20,8 @@ export default function Search() {
   const { colors } = useTheme();
   const { isTV } = useLayout();
   const params = useLocalSearchParams<{ q?: string }>();
+  // Result pages are not canonical content.
+  usePageMeta({ title: 'جستجو', path: null });
   const [query, setQuery] = useState(params.q ?? '');
   const [filter, setFilter] = useState<Filter>('all');
   const search = useSearch(query);

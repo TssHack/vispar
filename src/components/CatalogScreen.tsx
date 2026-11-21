@@ -1,4 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
+import { usePageMeta } from '@/lib/pageMeta';
 import { useEffect, useState } from 'react';
 
 import type { ContentType } from '@/api/types';
@@ -15,6 +16,7 @@ export function CatalogScreen({ type, title }: { type: ContentType; title: strin
   const c = useFilteredCatalog(type);
   const [open, setOpen] = useState(false);
   const { genre } = useLocalSearchParams<{ genre?: string }>();
+  usePageMeta({ title, description: `تازه‌ترین ${title} با زیرنویس فارسی و دوبله، در ویسپار.`, path: type === 'serie' ? '/series' : '/movies' });
   useEffect(() => {
     // Opened from a genre chip on the home screen.
     if (genre) c.setFilters({ ...EMPTY_FILTERS, genres: [genre] });
