@@ -4,6 +4,25 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-11-21
+
+Every item here was checked on the official Android TV emulator image, and the subtitle fix with a real catalogue file.
+
+### Fixed
+
+- **Android TV: Movies, Series, Search and Library rendered blank** ([#52](https://github.com/TssHack/vispar/issues/52), [#55](https://github.com/TssHack/vispar/pull/55)). The TV fork of React Native wraps every list in a focus guide with no size, so a full-screen list collapsed to 2 dp. That is why the list pages were empty while Home and Settings worked. It was already broken in 2.3.0. The TV build now gives that wrapper the list's size, and fails the build if the fork's code changes.
+- **Android TV: the remote did nothing in the player** ([#53](https://github.com/TssHack/vispar/issues/53), [#55](https://github.com/TssHack/vispar/pull/55)). There were two causes:
+  - Android TV sends a press only as a key-up by default, and the app ignored key-ups.
+  - With the controls hidden, nothing had focus, and Android delivers keys only along the focused path.
+
+  Left/right now seek ±10 s per press (and repeat while held), the controls open with the seek bar focused, and Play/Pause toggles exactly once.
+- **Subtitles inside MKV files now show in the built-in player, on every platform** ([#54](https://github.com/TssHack/vispar/issues/54), [#56](https://github.com/TssHack/vispar/pull/56)). Most of the catalogue (`SoftSub`, `زیرنویس`) carries the subtitle inside the MKV. VLC showed it; the app said "no subtitle", or on Android drew it tiny.
+  - The app now reads the subtitle straight from the file with small range requests, without downloading the film, starting with the lines around the playback position.
+  - It draws the subtitle in its own overlay, with your size, background and sync settings.
+  - Works with mkvmerge and ffmpeg files; SubRip, ASS/SSA and WebVTT tracks; UTF-8 and Windows-1256 text.
+  - Checked with a real 860 MB catalogue file on the Android TV emulator and in the browser.
+  - Reading the subtitle never takes more than two connections, so the video keeps streaming. Each request is retried after a stall.
+
 ## [2.4.0] - 2026-11-21
 
 ### Fixed: subtitles, at the root ([#49](https://github.com/TssHack/vispar/issues/49), [#50](https://github.com/TssHack/vispar/pull/50))
