@@ -79,13 +79,6 @@ describe('Android TV build uses the matching stable TV fork', () => {
   });
 });
 
-describe('TV tabs stay visible after switching (#52)', () => {
-  it('does not detach inactive tab screens on TV', () => {
-    const src = readFileSync('src/app/(tabs)/_layout.tsx', 'utf8');
-    expect(src).toMatch(/detachInactiveScreens=\{!isTV\}/);
-  });
-});
-
 describe('remote keys on Android TV (#53)', () => {
   const load = async () => (await import('@/lib/remoteKeys')).remoteKeyFrom;
 
@@ -125,5 +118,34 @@ describe('remote keys on Android TV (#53)', () => {
   it('leaves play/pause to the media session, so a press is not applied twice', () => {
     const src = readFileSync('src/app/player.tsx', 'utf8');
     expect(src).toMatch(/if \(k === 'playPause' \|\| k === 'play' \|\| k === 'pause'\) return;/);
+  });
+});
+
+describe('FlatList screens are not blank on TV (#52)', () => {
+  const { patchSource, MARKER } = createRequire(import.meta.url)('../scripts/patch-tvos-lists.js') as { patchSource: (s: string) => string; MARKER: string };
+  // The exact block from @react-native-tvos/virtualized-lists@0.88.1-0, Lists/VirtualizedList.js.
+  const fork = `import {\n  StyleSheet,\n  TVFocusGuideView,\n} from 'react-native';\nclass VirtualizedList {\n  render() {\n    return (\n        {Platform.isTV ? (\n          <TVFocusGuideView\n            {...trapFocusHorizontal}\n            trapFocusUp={false}>\n          </TVFocusGuideView>\n        ) : null}\n    );\n  }\n}\n`;
+
+  it('gives the focus guide the list size, so a flex: 1 list fills its screen', () => {
+    const out = patchSource(fork);
+    expect(out).toContain('style={__visparGuideStyle(this.props.style)}');
+    expect(out).toContain('function __visparGuideStyle(style)');
+  });
+
+  it('is idempotent, and refuses a fork whose code changed', () => {
+    const once = patchSource(fork);
+    expect(patchSource(once)).toBe(once);
+    expect(once.split(MARKER).length).toBe(3);
+    expect(() => patchSource('export default 1;')).toThrow(/#52/);
+  });
+
+  it('runs in the TV build right after the fork is installed', () => {
+    const wf = readFileSync('.github/workflows/android.yml', 'utf8');
+    const install = wf.indexOf('npm install "react-native@npm:react-native-tvos');
+    const patch = wf.indexOf('node scripts/patch-tvos-lists.js');
+    const prebuild = wf.indexOf('expo prebuild');
+    expect(install).toBeGreaterThan(-1);
+    expect(patch).toBeGreaterThan(install);
+    expect(prebuild).toBeGreaterThan(patch);
   });
 });

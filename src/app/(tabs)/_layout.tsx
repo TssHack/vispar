@@ -12,10 +12,6 @@ export default function TabsLayout() {
 
   const tabs = (
     <Tabs
-      // Android TV: switching tab with detached screens left the content blank, because the TV fork of
-      // React Native never re-attaches the new `react-native-screens` Screen (#52). On TV, inactive tabs
-      // stay mounted and are hidden with `display: none` instead.
-      detachInactiveScreens={!isTV}
       tabBar={phone ? () => <BottomNav /> : () => null}
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
     >
