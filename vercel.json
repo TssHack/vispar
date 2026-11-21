@@ -5,7 +5,7 @@
   "buildCommand": "npm run build:web",
   "outputDirectory": "dist",
   "cleanUrls": false,
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [{ "source": "/(.*)", "destination": "/app.html" }],
   "headers": [
     {
       "source": "/sw.js",

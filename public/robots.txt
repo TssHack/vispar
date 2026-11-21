@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /player
 
 Sitemap: https://vispar.ehsanfazli.ir/sitemap.xml

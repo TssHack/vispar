@@ -5,9 +5,21 @@ const SITE_URL_DEFAULT = 'https://vispar.ehsanfazli.ir';
 const TITLE = 'ویسپار';
 const DESCRIPTION = 'ویسپار؛ تماشای فیلم و سریال روی موبایل، تلویزیون و کامپیوتر';
 
-/** Tags to add when missing. `key` is a regex that detects an existing equivalent. */
-function headTags(site) {
+/** Search engine verification tokens, from the build environment (#62). Only safe token characters. */
+function verificationTags(env) {
+  const ok = (v) => (typeof v === 'string' && /^[A-Za-z0-9_\-.:=+]{6,128}$/.test(v.trim()) ? v.trim() : '');
+  const google = ok(env.GOOGLE_SITE_VERIFICATION);
+  const bing = ok(env.BING_SITE_VERIFICATION);
   return [
+    ...(google ? [{ key: /name="google-site-verification"/, tag: `<meta name="google-site-verification" content="${google}" />` }] : []),
+    ...(bing ? [{ key: /name="msvalidate\.01"/, tag: `<meta name="msvalidate.01" content="${bing}" />` }] : []),
+  ];
+}
+
+/** Tags to add when missing. `key` is a regex that detects an existing equivalent. */
+function headTags(site, env = {}) {
+  return [
+    ...verificationTags(env),
     { key: /rel="manifest"/, tag: '<link rel="manifest" href="/manifest.webmanifest" />' },
     { key: /rel="icon"[^>]*sizes="32x32"|favicon-32/, tag: '<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />' },
     { key: /rel="apple-touch-icon"/, tag: '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />' },
@@ -35,7 +47,7 @@ function headTags(site) {
 }
 
 /** Adds the PWA, social and direction tags that are not there yet. Running it twice changes nothing. */
-function injectHead(html, { site = SITE_URL_DEFAULT } = {}) {
+function injectHead(html, { site = SITE_URL_DEFAULT, env = {} } = {}) {
   const origin = site.replace(/\/+$/, '');
   let out = html;
 
@@ -47,7 +59,7 @@ function injectHead(html, { site = SITE_URL_DEFAULT } = {}) {
     return `<html${a}>`;
   });
 
-  const missing = headTags(origin).filter((t) => !t.key.test(out)).map((t) => `    ${t.tag}`);
+  const missing = headTags(origin, env).filter((t) => !t.key.test(out)).map((t) => `    ${t.tag}`);
   if (missing.length) out = out.replace('</head>', `${missing.join('\n')}\n  </head>`);
 
   // iOS needs viewport-fit=cover for the notch / home indicator safe areas.
@@ -55,4 +67,4 @@ function injectHead(html, { site = SITE_URL_DEFAULT } = {}) {
   return out;
 }
 
-module.exports = { injectHead, SITE_URL_DEFAULT };
+module.exports = { injectHead, verificationTags, SITE_URL_DEFAULT };

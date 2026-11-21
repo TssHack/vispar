@@ -4,6 +4,7 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { flatten, fromSaved, useMovies, useSeries } from '@/api/hooks';
+import { usePageMeta } from '@/lib/pageMeta';
 import type { Poster } from '@/api/types';
 import { Chip } from '@/components/Chip';
 import { Focusable } from '@/components/Focusable';
@@ -35,6 +36,7 @@ function HeaderButton({ icon, label, onPress }: { icon: 'search' | 'settings'; l
 
 export default function Home() {
   const { colors } = useTheme();
+  usePageMeta({ title: 'تماشای فیلم و سریال با زیرنویس فارسی', description: 'ویسپار؛ تماشای فیلم و سریال با زیرنویس فارسی و دوبله روی موبایل، تلویزیون و کامپیوتر.', path: '/' });
   const { isTV, isWide, isWeb, gutter, bp, maxContent } = useLayout();
   const insets = useSafeAreaInsets();
   const sections = settingsStore.use((s) => s.home);

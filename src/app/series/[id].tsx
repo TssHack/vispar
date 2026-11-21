@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
+import { posterPageMeta, usePageMeta } from '@/lib/pageMeta';
 import { usePoster, useSeasons } from '@/api/hooks';
 import type { Episode } from '@/api/types';
 import { Art } from '@/components/Art';
@@ -29,6 +30,8 @@ export default function SeriesScreen() {
   const { isTV, isWide, width, gutter } = useLayout();
   const seriesId = Number(id);
   const q = usePoster('serie', seriesId);
+  // Before any early return: hooks must run in the same order on every render.
+  usePageMeta(posterPageMeta(q.data, 'serie'));
   const seasons = useSeasons(q.data ? seriesId : null);
   const progress = useProgressMap();
   const [seasonIdx, setSeasonIdx] = useState(0);

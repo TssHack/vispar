@@ -13,6 +13,7 @@ import { toast } from '@/components/Toast';
 import { config, repoUrl } from '@/config';
 import { appsFor, detectInstalled } from '@/external/launch';
 import { useLayout } from '@/hooks/useLayout';
+import { usePageMeta } from '@/lib/pageMeta';
 import { getPermission, notificationsSupported, notifyLocal, requestPermission } from '@/notifications';
 import { checkNewContent, checkNewEpisodes } from '@/notifications/watcher';
 import { detectStandalone, openInstallGuide, promptInstall, useInstallKind } from '@/pwa/install';
@@ -182,6 +183,7 @@ function LinkRow({ icon, title, subtitle, url }: { icon: IconName; title: string
 
 export default function Settings() {
   const { colors, preference, setPreference } = useTheme();
+  usePageMeta({ title: 'تنظیمات', path: null });
   const { gutter, isTV, isWide } = useLayout();
   const insets = useSafeAreaInsets();
   const s = settingsStore.use((x) => x);

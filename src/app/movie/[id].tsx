@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
+import { posterPageMeta, usePageMeta } from '@/lib/pageMeta';
 import { usePoster } from '@/api/hooks';
 import { Button } from '@/components/Button';
 import { DetailHeader } from '@/components/DetailHeader';
@@ -42,6 +43,7 @@ export default function MovieScreen() {
   const progress = useProgressMap();
   const q = usePoster('movie', Number(id));
   const movie = q.data;
+  usePageMeta(posterPageMeta(movie, 'movie'));
 
   if (q.isLoading) {
     return (
