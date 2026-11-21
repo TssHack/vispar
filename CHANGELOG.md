@@ -4,6 +4,14 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+## [2.4.2] - 2026-11-21
+
+### Fixed
+
+- **iOS: MKV files play in the built-in player again** ([#58](https://github.com/TssHack/vispar/issues/58), [#59](https://github.com/TssHack/vispar/pull/59)). 2.4.0 refused MKV on iPhone and iPad *before trying* and sent you to VLC/Infuse. That was based on an assumption about Apple's player that was never checked on a device, and on real iPhones those files had been playing.
+  - The file is always tried again, at the quality you chose, with its embedded subtitle (2.4.1).
+  - If an MKV really cannot play on your device, the player says so and puts *play with another player* first.
+
 ## [2.4.1] - 2026-11-21
 
 Every item here was checked on the official Android TV emulator image, and the subtitle fix with a real catalogue file.
