@@ -360,10 +360,11 @@ export default function PlayerScreen() {
   // left/right to itself through nextFocusLeft/Right). Media controls stay left-to-right.
   useRemote((k) => {
     if (!isTV) return;
-    if (k === 'playPause') toggle();
-    else if (k === 'play') player.play();
-    else if (k === 'pause') player.pause();
-    else if (k === 'rewind') seekBy(-skip * 2);
+    // Play/pause keys are handled by Android's media session (expo-video registers one); acting on
+    // them here as well toggled twice, i.e. not at all. Pausing still shows the controls through the
+    // `isPlaying` effect.
+    if (k === 'playPause' || k === 'play' || k === 'pause') return;
+    if (k === 'rewind') seekBy(-skip * 2);
     else if (k === 'fastForward') seekBy(skip * 2);
     else if (!visible && !menu && !ended) {
       if (k === 'left' || k === 'right') {

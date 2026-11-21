@@ -85,3 +85,45 @@ describe('TV tabs stay visible after switching (#52)', () => {
     expect(src).toMatch(/detachInactiveScreens=\{!isTV\}/);
   });
 });
+
+describe('remote keys on Android TV (#53)', () => {
+  const load = async () => (await import('@/lib/remoteKeys')).remoteKeyFrom;
+
+  it('counts a key-up when the device sends no key-downs (the default on Android TV)', async () => {
+    const remoteKeyFrom = await load();
+    const state = { sawKeyDown: false };
+    // This was the bug: every press arrived as a key-up and every key-up was dropped.
+    expect(remoteKeyFrom({ eventType: 'right', eventKeyAction: 1 }, state)).toBe('right');
+    expect(remoteKeyFrom({ eventType: 'up', eventKeyAction: 1 }, state)).toBe('up');
+  });
+
+  it('counts each press once when key-downs are sent too', async () => {
+    const remoteKeyFrom = await load();
+    const state = { sawKeyDown: false };
+    expect(remoteKeyFrom({ eventType: 'left', eventKeyAction: 0 }, state)).toBe('left');
+    expect(remoteKeyFrom({ eventType: 'left', eventKeyAction: 1 }, state)).toBeNull();
+  });
+
+  it('repeats while a key is held, and ignores the final long key-up', async () => {
+    const remoteKeyFrom = await load();
+    const state = { sawKeyDown: false };
+    expect(remoteKeyFrom({ eventType: 'longRight', eventKeyAction: 0 }, state)).toBe('right');
+    expect(remoteKeyFrom({ eventType: 'longRight', eventKeyAction: 0 }, state)).toBe('right');
+    expect(remoteKeyFrom({ eventType: 'longRight', eventKeyAction: 1 }, state)).toBeNull();
+    expect(remoteKeyFrom({ eventType: 'longSelect', eventKeyAction: 0 }, state)).toBe('select');
+  });
+
+  it('ignores focus/blur notifications and unknown events', async () => {
+    const remoteKeyFrom = await load();
+    const state = { sawKeyDown: false };
+    expect(remoteKeyFrom({ eventType: 'focus', eventKeyAction: -1 }, state)).toBeNull();
+    expect(remoteKeyFrom({ eventType: 'blur', eventKeyAction: -1 }, state)).toBeNull();
+    expect(remoteKeyFrom({ eventType: 'channelUp', eventKeyAction: 1 }, state)).toBeNull();
+    expect(remoteKeyFrom(null, state)).toBeNull();
+  });
+
+  it('leaves play/pause to the media session, so a press is not applied twice', () => {
+    const src = readFileSync('src/app/player.tsx', 'utf8');
+    expect(src).toMatch(/if \(k === 'playPause' \|\| k === 'play' \|\| k === 'pause'\) return;/);
+  });
+});
