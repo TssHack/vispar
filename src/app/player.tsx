@@ -36,7 +36,7 @@ import { SubtitleOverlay } from '@/components/SubtitleOverlay';
 import { useSubtitles } from '@/hooks/useSubtitles';
 import { subtitleHint } from '@/lib/subtitles/parse';
 import { subtitleKey } from '@/lib/subtitles/store';
-import { subtitleLinkFrom } from '@/lib/subtitles/tracks';
+import { isPersianTrack, subtitleLinkFrom } from '@/lib/subtitles/tracks';
 import { getSettings, useSetting } from '@/settings/store';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -188,7 +188,13 @@ export default function PlayerScreen() {
     player,
   });
   /** Short label for the control bar: what the subtitle button currently shows. */
-  const subtitleLabel = !subs.cues.length && !subs.activeTrack ? 'خاموش' : subs.sidecarUrl && /\.(fa|persian|per)\.(srt|vtt)/i.test(subs.sidecarUrl) ? 'فارسی' : 'روشن';
+  const activeTrackInfo = subs.tracks.find((t) => t.id === subs.activeTrack);
+  const subtitleLabel =
+    !subs.cues.length && !subs.activeTrack
+      ? 'خاموش'
+      : (activeTrackInfo && isPersianTrack({ ...activeTrackInfo, name: activeTrackInfo.label })) || (subs.sidecarUrl && /\.(fa|persian|per)\.(srt|vtt)/i.test(subs.sidecarUrl))
+        ? 'فارسی'
+        : 'روشن';
 
   // ---------- controls visibility ----------
   const [visible, setVisible] = useState(true);
