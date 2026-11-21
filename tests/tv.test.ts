@@ -78,3 +78,10 @@ describe('Android TV build uses the matching stable TV fork', () => {
     expect(pkg.dependencies['react-native']).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });
+
+describe('TV tabs stay visible after switching (#52)', () => {
+  it('does not detach inactive tab screens on TV', () => {
+    const src = readFileSync('src/app/(tabs)/_layout.tsx', 'utf8');
+    expect(src).toMatch(/detachInactiveScreens=\{!isTV\}/);
+  });
+});
