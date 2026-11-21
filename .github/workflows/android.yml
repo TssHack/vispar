@@ -45,6 +45,8 @@ jobs:
           echo "Building Android TV with react-native-tvos@${TVOS}"
           npm install "react-native@npm:react-native-tvos@${TVOS}" --no-save --legacy-peer-deps
           node -e "const p=require('react-native/package.json');if(p.name!=='react-native-tvos'){console.error('react-native is not the TV fork:',p.name);process.exit(1)}console.log('react-native resolves to',p.name,p.version)"
+          # The fork's FlatList wrapper has no size, so list screens rendered blank on TV (#52).
+          node scripts/patch-tvos-lists.js
       - name: Generate the native project
         run: npx expo prebuild --platform android --clean
       - name: Build release APK

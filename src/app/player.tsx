@@ -366,10 +366,11 @@ export default function PlayerScreen() {
   // left/right to itself through nextFocusLeft/Right). Media controls stay left-to-right.
   useRemote((k) => {
     if (!isTV) return;
-    if (k === 'playPause') toggle();
-    else if (k === 'play') player.play();
-    else if (k === 'pause') player.pause();
-    else if (k === 'rewind') seekBy(-skip * 2);
+    // Play/pause keys are handled by Android's media session (expo-video registers one); acting on
+    // them here as well toggled twice, i.e. not at all. Pausing still shows the controls through the
+    // `isPlaying` effect.
+    if (k === 'playPause' || k === 'play' || k === 'pause') return;
+    if (k === 'rewind') seekBy(-skip * 2);
     else if (k === 'fastForward') seekBy(skip * 2);
     else if (!visible && !menu && !ended) {
       if (k === 'left' || k === 'right') {
@@ -470,6 +471,21 @@ export default function PlayerScreen() {
         <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
+      ) : null}
+
+      {/*
+        Android TV: a key press travels down the view tree only along the focused view. With the
+        controls hidden nothing was focused, so no remote key reached the app (#53): this invisible view
+        holds focus meanwhile, and the remote handler above does the rest. It has no onPress, so select
+        is handled once, by the remote handler.
+      */}
+      {isTV && !visible && !menu ? (
+        <View
+          focusable
+          accessible={false}
+          {...({ hasTVPreferredFocus: true } as object)}
+          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
+        />
       ) : null}
 
       {/* Overlay controls */}
