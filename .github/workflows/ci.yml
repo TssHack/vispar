@@ -27,3 +27,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build:web
+        env:
+          # CI only checks that the build and the prerender work; the deploy (Vercel) prerenders the
+          # whole catalogue. Two pages per catalogue keep this job short.
+          SEO_MAX_PAGES: '2'
