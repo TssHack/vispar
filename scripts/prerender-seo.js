@@ -12,7 +12,7 @@ const DIST = path.join(__dirname, '..', 'dist');
 const SITE = (process.env.SITE_URL || SITE_URL_DEFAULT).replace(/\/+$/, '');
 const API = (process.env.EXPO_PUBLIC_API_BASE || 'https://cdnd.ehsanfazli.ir/api').replace(/\/+$/, '');
 const KEY = process.env.EXPO_PUBLIC_API_KEY || '';
-const MAX_PAGES = Number(process.env.SEO_MAX_PAGES || 60);
+const MAX_PAGES = Number(process.env.SEO_MAX_PAGES || 300);
 const TIMEOUT_MS = 15000;
 
 async function getJson(url) {
@@ -43,6 +43,7 @@ async function fetchAll(kind) {
     const before = seen.size;
     for (const it of items) if (it && it.id && it.title && !seen.has(it.id)) seen.set(it.id, { ...it, type: kind === 'serie' ? 'serie' : 'movie' });
     if (!items.length || seen.size === before) break;
+    if (page === MAX_PAGES - 1) console.warn(`seo: ${kind} stopped at the ${MAX_PAGES}-page cap (${seen.size} titles); raise SEO_MAX_PAGES if the catalogue is larger`);
   }
   return [...seen.values()];
 }
