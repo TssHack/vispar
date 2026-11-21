@@ -10,16 +10,55 @@ const { renderPage, titleMeta, titleBody, listBody, sitemapXml, SITE_NAME } = re
 
 const DIST = path.join(__dirname, '..', 'dist');
 const SITE = (process.env.SITE_URL || SITE_URL_DEFAULT).replace(/\/+$/, '');
-const API = (process.env.EXPO_PUBLIC_API_BASE || 'https://cdnd.ehsanfazli.ir/api').replace(/\/+$/, '');
-const KEY = process.env.EXPO_PUBLIC_API_KEY || '';
+const DEFAULT_API = 'https://cdnd.ehsanfazli.ir/api';
+/**
+ * Where to read the catalogue from, in order. The app's own base can be unreachable from the build
+ * machine (on Vercel the prerender found no catalogue while GitHub's runners read 18,000 titles through
+ * the public proxy), so the public proxy is always tried too. A key belongs to its own base only: the
+ * proxy adds its key server-side.
+ */
+const CANDIDATES = [
+  { base: process.env.SEO_API_BASE, key: process.env.SEO_API_KEY },
+  { base: process.env.EXPO_PUBLIC_API_BASE, key: process.env.EXPO_PUBLIC_API_KEY },
+  { base: DEFAULT_API, key: '' },
+]
+  .filter((c) => c.base && /^https?:\/\//.test(c.base))
+  .map((c) => ({ base: c.base.replace(/\/+$/, ''), key: c.key || '' }))
+  .filter((c, i, all) => all.findIndex((o) => o.base === c.base) === i);
+let API = CANDIDATES[0] ? CANDIDATES[0].base : DEFAULT_API;
+let KEY = CANDIDATES[0] ? CANDIDATES[0].key : '';
+
+/** Host only, for logs: never print a key or a full upstream URL. */
+const hostOf = (u) => {
+  try {
+    return new URL(u).host;
+  } catch {
+    return '?';
+  }
+};
+const reason = (err) => [err && err.message, err && err.cause && (err.cause.code || err.cause.message)].filter(Boolean).join(': ');
 const MAX_PAGES = Number(process.env.SEO_MAX_PAGES || 300);
 const TIMEOUT_MS = 15000;
 
-async function getJson(url) {
+/** `getJson` with retries: the public proxy answers 502 for a while when its upstream is down. */
+async function getJsonRetry(url, key = KEY, attempts = 4) {
+  let last;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await getJson(url, key);
+    } catch (err) {
+      last = err;
+      if (i + 1 < attempts) await new Promise((r) => setTimeout(r, 3000 * (i + 1)));
+    }
+  }
+  throw last;
+}
+
+async function getJson(url, key = KEY) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(KEY ? `${url}/${encodeURIComponent(KEY)}` : url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    const res = await fetch(key ? `${url}/${encodeURIComponent(key)}` : url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } finally {
@@ -33,10 +72,10 @@ async function fetchAll(kind) {
   for (let page = 0; page < MAX_PAGES; page++) {
     let list;
     try {
-      list = await getJson(`${API}/${kind}/by/filtres/0/created/${page}`);
+      list = await getJsonRetry(`${API}/${kind}/by/filtres/0/created/${page}`);
     } catch (err) {
       if (page === 0) throw err;
-      console.warn(`seo: ${kind} page ${page} failed (${err.message}); keeping ${seen.size} titles`);
+      console.warn(`seo: ${kind} page ${page} failed (${reason(err)}); keeping ${seen.size} titles`);
       break;
     }
     const items = Array.isArray(list) ? list : [];
@@ -70,13 +109,30 @@ async function main() {
   // The SPA fallback (vercel.json rewrites unknown paths here) must not claim to be the homepage.
   write('app.html', renderPage(base, { title: SITE_NAME, description: 'ویسپار؛ تماشای فیلم و سریال روی موبایل، تلویزیون و کامپیوتر', canonical: null }));
 
+  // The first base that answers with a list wins.
+  let reachable = false;
+  for (const c of CANDIDATES) {
+    try {
+      const probe = await getJsonRetry(`${c.base}/movie/by/filtres/0/created/0`, c.key);
+      if (!Array.isArray(probe)) throw new Error('not a list');
+      API = c.base;
+      KEY = c.key;
+      reachable = true;
+      console.log(`seo: reading the catalogue from ${hostOf(c.base)}`);
+      break;
+    } catch (err) {
+      console.warn(`seo: ${hostOf(c.base)} not usable (${reason(err)})`);
+    }
+  }
+
   let movies = [];
   let series = [];
-  try {
+  if (reachable) try {
     [movies, series] = await Promise.all([fetchAll('movie'), fetchAll('serie')]);
   } catch (err) {
-    console.warn(`seo: catalogue not reachable (${err.message}); writing the static pages and sitemap only`);
+    console.warn(`seo: catalogue failed (${reason(err)}); writing the static pages and sitemap only`);
   }
+  if (!reachable) console.warn('seo: no catalogue base reachable; writing the static pages and sitemap only');
 
   const lists = [
     { rel: 'movies/index.html', loc: `${SITE}/movies`, heading: 'فیلم‌ها', intro: 'تازه‌ترین فیلم‌ها با زیرنویس فارسی و دوبله، در ویسپار.', items: movies },
