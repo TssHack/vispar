@@ -6,9 +6,12 @@ const TITLE = 'ویسپار';
 const DESCRIPTION = 'ویسپار؛ تماشای فیلم و سریال روی موبایل، تلویزیون و کامپیوتر';
 
 /** Search engine verification tokens, from the build environment (#62). Only safe token characters. */
+/** The site's Search Console token. Public by design (it is served in the page); env can override it. */
+const GOOGLE_SITE_VERIFICATION_DEFAULT = 'W3UxkbPhiO52Fiff4Yk8mCIJS1YAxJrz4olhN1kddok';
+
 function verificationTags(env) {
   const ok = (v) => (typeof v === 'string' && /^[A-Za-z0-9_\-.:=+]{6,128}$/.test(v.trim()) ? v.trim() : '');
-  const google = ok(env.GOOGLE_SITE_VERIFICATION);
+  const google = ok(env.GOOGLE_SITE_VERIFICATION) || GOOGLE_SITE_VERIFICATION_DEFAULT;
   const bing = ok(env.BING_SITE_VERIFICATION);
   return [
     ...(google ? [{ key: /name="google-site-verification"/, tag: `<meta name="google-site-verification" content="${google}" />` }] : []),
