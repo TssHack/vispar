@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Source } from '@/api/types';
-import { canPlayInApp, containerOf, isTrailer } from '@/lib/containers';
+import { canPlayInApp, likelyUnsupportedOn, containerOf, isTrailer } from '@/lib/containers';
 import { pickSource } from '@/lib/sources';
 
 const src = (quality: string, url: string, type = ''): Source => ({ id: 1, quality, type, url });
@@ -40,7 +40,7 @@ describe('containerOf', () => {
   it('uses the API type for a script-style URL whose extension says nothing (download.php?file=a)', () => {
     expect(containerOf(src('', 'http://h/get/download.php?file=a', 'mkv'))).toBe('mkv');
     expect(containerOf(src('', 'http://h/get/download.php?file=a', ''))).toBe('other');
-    expect(canPlayInApp(src('', 'http://h/get/download.php?file=a', 'mkv'), 'ios')).toBe(false);
+    expect(likelyUnsupportedOn(src('', 'http://h/get/download.php?file=a', 'mkv'), 'ios')).toBe(true);
   });
 
   it('does not mistake a dotted directory for an extension', () => {
@@ -48,20 +48,22 @@ describe('containerOf', () => {
   });
 });
 
-describe('canPlayInApp', () => {
-  it('rejects MKV, AVI, WMV and FLV on iOS only', () => {
-    for (const u of ['a.mkv', 'a.avi', 'a.wmv', 'a.flv']) {
-      expect(canPlayInApp(src('', `http://h/${u}`), 'ios')).toBe(false);
-      expect(canPlayInApp(src('', `http://h/${u}`), 'android')).toBe(true);
-      expect(canPlayInApp(src('', `http://h/${u}`), 'desktop')).toBe(true);
-      expect(canPlayInApp(src('', `http://h/${u}`), 'web')).toBe(true);
+describe('canPlayInApp (#58: always try, never refuse on a guess)', () => {
+  it('gives every container to the built-in player on every platform, MKV on iOS included', () => {
+    for (const u of ['a.mkv', 'a.avi', 'a.wmv', 'a.flv', 'a.mp4', 'a.m3u8', 'stream/123']) {
+      for (const platform of ['ios', 'android', 'desktop', 'web'] as const) expect(canPlayInApp(src('', `http://h/${u}`), platform)).toBe(true);
     }
   });
+});
 
-  it('keeps MP4, HLS and unknown containers playable on iOS (detection is conservative)', () => {
-    expect(canPlayInApp(src('', 'http://h/a.mp4'), 'ios')).toBe(true);
-    expect(canPlayInApp(src('', 'http://h/a.m3u8'), 'ios')).toBe(true);
-    expect(canPlayInApp(src('', 'http://h/stream/123'), 'ios')).toBe(true);
+describe('likelyUnsupportedOn (explains a real failure)', () => {
+  it('blames the container for MKV, AVI, WMV and FLV on iOS only', () => {
+    for (const u of ['a.mkv', 'a.avi', 'a.wmv', 'a.flv']) {
+      expect(likelyUnsupportedOn(src('', `http://h/${u}`), 'ios')).toBe(true);
+      expect(likelyUnsupportedOn(src('', `http://h/${u}`), 'android')).toBe(false);
+    }
+    expect(likelyUnsupportedOn(src('', 'http://h/a.mp4'), 'ios')).toBe(false);
+    expect(likelyUnsupportedOn(src('', 'http://h/stream/123'), 'ios')).toBe(false);
   });
 });
 
@@ -75,30 +77,22 @@ describe('isTrailer', () => {
 });
 
 describe('pickSource with a platform', () => {
-  it('never plays the trailer instead of the film on iOS (the common catalogue shape)', () => {
+  it('never plays the trailer instead of the film (the common catalogue shape)', () => {
     const list = [MKV_1080, MKV_720, TRAILER];
     const pick = pickSource(list, 'best', { platform: 'ios' });
-    expect(pick).toBe(MKV_1080); // still the film; play() will route it to the external chooser
-    expect(pick).not.toBe(TRAILER);
+    expect(pick).toBe(MKV_1080);
     expect(pickSource(list, '480', { platform: 'ios' })).not.toBe(TRAILER);
   });
 
-  it('prefers a full-length MP4 over an MKV on iOS, even at lower quality', () => {
+  it('follows the quality preference on iOS too: MKV is no longer demoted (#58)', () => {
     const list = [MKV_1080, MKV_720, MP4_480, TRAILER];
-    expect(pickSource(list, 'best', { platform: 'ios' })).toBe(MP4_480);
+    expect(pickSource(list, 'best', { platform: 'ios' })).toBe(MKV_1080);
+    expect(pickSource(list, '720', { platform: 'ios' })).toBe(MKV_720);
   });
 
-  it('applies the quality preference among the playable ones only', () => {
-    const mp4_720 = src('720 دوبله پارس', 'http://h/film2/Other.720p.mp4', 'mp4');
-    const list = [MKV_1080, MP4_480, mp4_720];
-    expect(pickSource(list, '720', { platform: 'ios' })).toBe(mp4_720);
-    expect(pickSource(list, '480', { platform: 'ios' })).toBe(MP4_480);
-    expect(pickSource(list, 'best', { platform: 'ios' })).toBe(mp4_720);
-  });
-
-  it('leaves Android, desktop and web unchanged: MKV is picked by quality', () => {
+  it('picks MKV by quality on every platform', () => {
     const list = [MKV_1080, MP4_480, TRAILER];
-    for (const platform of ['android', 'desktop', 'web'] as const) {
+    for (const platform of ['ios', 'android', 'desktop', 'web'] as const) {
       expect(pickSource(list, 'best', { platform })).toBe(MKV_1080);
     }
   });

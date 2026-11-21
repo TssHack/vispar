@@ -27,7 +27,7 @@ import { useLayout } from '@/hooks/useLayout';
 import { useRemote } from '@/hooks/useRemote';
 import { canResume, getProgress, progressKey, saveProgress, snapshot } from '@/library/store';
 import { faClock, faNum, shortQuality, isStreamOnly, qualityLabel } from '@/lib/format';
-import { canPlayInApp, containerLabel, containerOf, isTrailer } from '@/lib/containers';
+import { canPlayInApp, containerLabel, containerOf, likelyUnsupportedOn } from '@/lib/containers';
 import { appPlatform } from '@/lib/platform';
 import { pickSource, sortSources } from '@/lib/sources';
 import { SeekBar } from '@/player/SeekBar';
@@ -428,7 +428,8 @@ export default function PlayerScreen() {
   if (!current && !sources.length && !resolving) return <NotFound title="لینک پخش نامعتبر است" body="دوباره از صفحه‌ی فیلم امتحان کنید." />;
 
   const blocked = !!current && isBlockedByBrowser(current.url) && !httpsOf[current.url];
-  const unplayable = !!current && !canPlayInApp(current, appPlatform());
+  /** The container is the likely reason a failure happened here (MKV on iOS): say so on the error screen. */
+  const containerRisk = !!current && likelyUnsupportedOn(current, appPlatform());
   const checkingHttps = !!current && isBlockedByBrowser(current.url) && !(current.url in httpsOf);
   const big = isTV || isWide;
   const side = Math.max(insets.left, insets.right, 16);
@@ -467,7 +468,7 @@ export default function PlayerScreen() {
         </View>
       ) : null}
 
-      {(status === 'loading' && !blocked && !unplayable) || resolving || checkingHttps ? (
+      {(status === 'loading' && !blocked) || resolving || checkingHttps ? (
         <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -489,7 +490,7 @@ export default function PlayerScreen() {
       ) : null}
 
       {/* Overlay controls */}
-      {visible && status !== 'error' && !ended && !blocked && !unplayable ? (
+      {visible && status !== 'error' && !ended && !blocked ? (
         <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'space-between' }}>
           <LinearGradient pointerEvents="box-none" colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0)']} style={{ paddingTop: top, paddingHorizontal: side, paddingBottom: 36, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             {!isTV ? <CtrlButton icon="back" label="بستن پخش" onPress={goBack} size={44} iconSize={22} filled /> : null}
@@ -746,30 +747,6 @@ export default function PlayerScreen() {
         </View>
       ) : null}
 
-      {/* A container this platform's decoder cannot play (MKV on iOS): say so, never show a generic error */}
-      {unplayable && current ? (
-        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: '#000' }}>
-          <Icon name="alert" size={36} color="#F4F1EA" />
-          <Text size={17} weight={800} color="#F4F1EA" align="center">
-            این فایل {containerLabel(containerOf(current)) || ''} است و iOS آن را پخش نمی‌کند
-          </Text>
-          <Text size={13} color="#C9C5D3" align="center" style={{ maxWidth: 520 }}>
-            پلیر داخلی آیفون و آیپد (AVPlayer) فایل‌های MKV را نمی‌شناسد. همین فایل را با VLC، Infuse یا nPlayer باز کنید، یا اگر کیفیت دیگری از نوع MP4 هست آن را امتحان کنید.
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
-            <Button label="پخش با پلیر دیگر" icon="external" onPress={() => openExternalSheet({ kind: 'player', url: current.url, title })} hasTVPreferredFocus={isTV} />
-            {sources
-              .filter((s) => s.url !== current.url && !isTrailer(s) && canPlayInApp(s, appPlatform()))
-              .slice(0, 1)
-              .map((s) => (
-                <Button key={s.url} label={`امتحان با ${s.quality}`} variant="onImage" onPress={() => switchSource(s)} />
-              ))}
-            <Button label="کپی لینک" icon="link" variant="onImage" onPress={() => copyLink(current.url)} />
-            <Button label="بازگشت" variant="onImage" onPress={goBack} />
-          </View>
-        </View>
-      ) : null}
-
       {/* HTTPS page + plain-HTTP media: the browser refuses to load it, so explain and offer the way out */}
       {blocked && !checkingHttps && current ? (
         <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: '#000' }}>
@@ -791,11 +768,16 @@ export default function PlayerScreen() {
       ) : null}
 
       {/* Error */}
-      {status === 'error' && !blocked && !unplayable ? (
+      {status === 'error' && !blocked ? (
         <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: 'rgba(0,0,0,0.9)' }}>
           <Icon name="alert" size={36} color="#F4F1EA" />
           {(() => {
-            const hint = explainPlaybackError(error?.message);
+            const hint = containerRisk
+              ? {
+                  title: `پلیر داخلی این فایل ${containerLabel(containerOf(current!))} را پخش نکرد`,
+                  body: 'پلیر آیفون و آیپد بعضی فایل‌های MKV را نمی‌شناسد. همین فایل را با VLC، Infuse یا nPlayer باز کنید، یا کیفیت دیگری را امتحان کنید.',
+                }
+              : explainPlaybackError(error?.message);
             return (
               <>
                 <Text size={17} weight={800} color="#F4F1EA" align="center">
@@ -813,13 +795,16 @@ export default function PlayerScreen() {
             {current ? `\n${current.url}` : ''}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
+            {containerRisk && current ? (
+              <Button label="پخش با پلیر دیگر" icon="external" onPress={() => openExternalSheet({ kind: 'player', url: current.url, title })} hasTVPreferredFocus={isTV} />
+            ) : null}
             {sources
               .filter((s) => s.url !== current?.url)
               .slice(0, 1)
               .map((s) => (
                 <Button key={s.url} label={`امتحان با ${s.quality}`} onPress={() => switchSource(s)} hasTVPreferredFocus={isTV} />
               ))}
-            {current ? <Button label="پخش با پلیر دیگر" variant="onImage" icon="external" onPress={() => openExternalSheet({ kind: 'player', url: current.url, title })} /> : null}
+            {current && !containerRisk ? <Button label="پخش با پلیر دیگر" variant="onImage" icon="external" onPress={() => openExternalSheet({ kind: 'player', url: current.url, title })} /> : null}
             <Button
               label="کپی جزئیات خطا"
               variant="onImage"

@@ -42,19 +42,27 @@ export function containerOf(source: SourceLike): Container | null {
   return null;
 }
 
-/** Containers AVPlayer (the only decoder behind `expo-video` on iOS) cannot play. */
-const IOS_UNSUPPORTED: Container[] = ['mkv', 'avi', 'wmv', 'flv'];
+/** Containers older iOS players are known to reject. Used only to explain a failure, never to refuse. */
+const IOS_RISKY: Container[] = ['mkv', 'avi', 'wmv', 'flv'];
 
 /**
- * Can the built-in player decode this source on `platform`? Deliberately conservative: only
- * containers known to fail are rejected, so an unknown or odd URL is still attempted and the
- * external-player route stays an extra option, never a replacement. Android, the desktop app and the
- * web are unchanged (the web hands playback to external players anyway).
+ * Should the built-in player be given this source on `platform`? Always yes (#58).
+ *
+ * 2.4.0 refused MKV on iOS before trying, on the assumption that AVPlayer cannot decode it. That was
+ * never checked on a device, and on the owner's iPhone those files had been playing in the app. A
+ * guess must not turn a working path into a guaranteed refusal: the file is always tried, and a real
+ * failure is explained by the player's error screen (`likelyUnsupportedOn`), with the external
+ * players one tap away.
  */
-export function canPlayInApp(source: SourceLike, platform: PlayerPlatform): boolean {
-  if (platform !== 'ios') return true;
+export function canPlayInApp(_source: SourceLike, _platform: PlayerPlatform): boolean {
+  return true;
+}
+
+/** When playback has failed: is the container the likely reason on this platform? */
+export function likelyUnsupportedOn(source: SourceLike, platform: PlayerPlatform): boolean {
+  if (platform !== 'ios') return false;
   const container = containerOf(source);
-  return container === null || !IOS_UNSUPPORTED.includes(container);
+  return container !== null && IOS_RISKY.includes(container);
 }
 
 /** Teasers and trailers are short clips, not the film: never a stand-in for it. */
