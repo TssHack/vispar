@@ -279,8 +279,13 @@ export function useSubtitles(options: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source?.url, isMkv, enabled, saved.off, saved.url]);
 
-  /** True while the file's own subtitle is being read or is available: the other paths stand back. */
-  const mkvOwns = isMkv && (mkv.status === 'loading' || mkv.status === 'ready');
+  /**
+   * True while the file's own subtitle is about to be read, being read, or available: the other paths
+   * stand back. "About to" matters: on the first render the reader has not started yet (status
+   * `none`), and the sidecar search used to fire in that gap.
+   */
+  const mkvWanted = isMkv && enabled && !saved.off && !saved.url;
+  const mkvOwns = mkvWanted && mkv.status !== 'failed';
 
   const selectTrack = useCallback(
     (track: { id: string; language: string } | null) => {
@@ -380,7 +385,7 @@ export function useSubtitles(options: {
       enabled,
       autoProbe,
       hasEmbeddedTracks: (NATIVE_TRACKS && tracks.length > 0) || mkv.status === 'ready',
-      tracksKnown: tracksKnown && !(isMkv && mkv.status === 'loading'),
+      tracksKnown: tracksKnown && !(mkvWanted && (mkv.status === 'none' || mkv.status === 'loading')),
       saved,
       probedFor: probedFor.current,
     });
