@@ -201,3 +201,27 @@ describe('httpRangeFetcher', () => {
     }
   });
 });
+
+describe('retrying', () => {
+  it('survives a stalled or dropped request', async () => {
+    const { retrying } = await import('@/lib/subtitles/mkv');
+    let calls = 0;
+    const flaky = async () => {
+      calls++;
+      if (calls < 3) throw new Error('timeout');
+      return new Uint8Array([1]);
+    };
+    expect(await retrying(flaky, 3, 1)(0, 1)).toEqual(new Uint8Array([1]));
+    expect(calls).toBe(3);
+  });
+  it('does not retry a server that refuses Range', async () => {
+    const { retrying, RangeRefused } = await import('@/lib/subtitles/mkv');
+    let calls = 0;
+    const refuse = async (): Promise<Uint8Array> => {
+      calls++;
+      throw new RangeRefused(200);
+    };
+    await expect(retrying(refuse, 3, 1)(0, 1)).rejects.toThrow(/range/);
+    expect(calls).toBe(1);
+  });
+});

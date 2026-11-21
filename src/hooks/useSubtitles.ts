@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 import type { Source } from '@/api/types';
 import { containerOf } from '@/lib/containers';
 import { playableUrl } from '@/lib/media';
-import { httpRangeFetcher, readMkvIndex, readMkvTrack, type MkvIndex, type MkvTextTrack, type RangeFetcher } from '@/lib/subtitles/mkv';
+import { httpRangeFetcher, readMkvIndex, readMkvTrack, retrying, type MkvIndex, type MkvTextTrack, type RangeFetcher } from '@/lib/subtitles/mkv';
 import { getSubtitleChoice, setSubtitleChoice, useSubtitleChoice } from '@/lib/subtitles/store';
 import { loadSubtitle, probeSidecar } from '@/lib/subtitles/load';
 import { type Cue } from '@/lib/subtitles/parse';
@@ -257,7 +257,10 @@ export function useSubtitles(options: {
     }
     const run = mkvRun.current;
     const ctrl = typeof AbortController === 'function' ? new AbortController() : undefined;
-    const fetchRange = httpRangeFetcher(playableUrl(source.url), ctrl?.signal);
+    const stopped = { aborted: false };
+    ctrl?.signal.addEventListener?.('abort', () => (stopped.aborted = true));
+    // Retried: the video streams from the same host, and a request can stall while it buffers.
+    const fetchRange = retrying(httpRangeFetcher(playableUrl(source.url), ctrl?.signal), 3, 1500, stopped);
     setMkv({ status: 'loading', tracks: [] });
     readMkvIndex(fetchRange)
       .then((index) => {

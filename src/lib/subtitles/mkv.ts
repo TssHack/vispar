@@ -310,6 +310,7 @@ export function blockText(buf: Uint8Array, track: number): { payload: Uint8Array
 export type ReadTrackOptions = {
   /** Playback position in seconds: the nearest lines are fetched first. */
   from?: number;
+  /** Parallel requests, 2 by default and never more than 4 (see below). */
   concurrency?: number;
   /** Called with all cues read so far, sorted, as batches arrive. */
   onProgress?: (cues: Cue[]) => void;
@@ -358,7 +359,10 @@ export async function readMkvTrack(fetchRange: RangeFetcher, index: MkvIndex, tr
       }
     }
   };
-  await Promise.all(Array.from({ length: Math.max(1, options.concurrency ?? 6) }, worker));
+  // Two at a time: browsers open at most 6 connections per host over HTTP/1.1, and the video itself
+  // streams from the same host. Six subtitle requests starved the video (seen on a real file: playback
+  // stalled while the lines loaded), so most connections stay free for it.
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(options.concurrency ?? 2, 4)) }, worker));
   cues.sort((a, b) => a.start - b.start);
   // A line without a duration lasts until the next one at most.
   for (let i = 0; i + 1 < cues.length; i++) if (guessed.has(cues[i]!) && cues[i]!.end > cues[i + 1]!.start) cues[i]!.end = cues[i + 1]!.start;
@@ -368,19 +372,57 @@ export async function readMkvTrack(fetchRange: RangeFetcher, index: MkvIndex, tr
 
 /**
  * A `RangeFetcher` over `fetch`. Refuses a `200` (a server that ignores Range would send the whole
- * film) and cancels its body at once.
+ * film) and cancels its body at once. Each request gives up after `timeoutMs`: on a real file the
+ * first request once stalled for a minute while the video was filling its buffer.
  */
-export function httpRangeFetcher(url: string, signal?: AbortSignal): RangeFetcher {
+export function httpRangeFetcher(url: string, signal?: AbortSignal, timeoutMs = 20_000): RangeFetcher {
   return async (start, end) => {
-    const res = await fetch(url, { headers: { Range: `bytes=${start}-${end}` }, signal });
-    if (res.status !== 206) {
-      try {
-        await res.body?.cancel();
-      } catch {
-        // nothing to cancel
+    const ctrl = typeof AbortController === 'function' ? new AbortController() : undefined;
+    const stop = () => ctrl?.abort();
+    signal?.addEventListener?.('abort', stop);
+    const timer = setTimeout(stop, timeoutMs);
+    try {
+      const res = await fetch(url, { headers: { Range: `bytes=${start}-${end}` }, signal: ctrl?.signal ?? signal });
+      if (res.status !== 206) {
+        try {
+          await res.body?.cancel();
+        } catch {
+          // nothing to cancel
+        }
+        throw new RangeRefused(res.status);
       }
-      throw new Error(`range not supported (${res.status})`);
+      return new Uint8Array(await res.arrayBuffer());
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener?.('abort', stop);
     }
-    return new Uint8Array(await res.arrayBuffer());
+  };
+}
+
+/** The server answered without honouring Range. Retrying cannot help. */
+export class RangeRefused extends Error {
+  constructor(status: number) {
+    super(`range not supported (${status})`);
+  }
+}
+
+/**
+ * Retries a failed range request (timeout, dropped connection) a few times with a growing pause.
+ * One slow answer must not cost the whole subtitle; a server that refuses Range is not retried.
+ */
+export function retrying(fetchRange: RangeFetcher, attempts = 3, pauseMs = 1500, signal?: { aborted: boolean }): RangeFetcher {
+  return async (start, end) => {
+    let last: unknown;
+    for (let i = 0; i < attempts; i++) {
+      if (signal?.aborted) break;
+      try {
+        return await fetchRange(start, end);
+      } catch (err) {
+        last = err;
+        if (err instanceof RangeRefused) break;
+        if (i + 1 < attempts) await new Promise((r) => setTimeout(r, pauseMs * (i + 1)));
+      }
+    }
+    throw last ?? new Error('aborted');
   };
 }
