@@ -7,7 +7,7 @@ const DESCRIPTION = 'ویسپار؛ تماشای فیلم و سریال روی �
 
 /** Search engine verification tokens, from the build environment (#62). Only safe token characters. */
 /** The site's Search Console token. Public by design (it is served in the page); env can override it. */
-const GOOGLE_SITE_VERIFICATION_DEFAULT = 'W3UxkbPhiO52Fiff4Yk8mCIJS1YAxJrz4olhN1kddok';
+const GOOGLE_SITE_VERIFICATION_DEFAULT = 'qMovZ5uUbjXKycz0mfGVuukURhrH3A9CzAp0o_sDlxc';
 
 function verificationTags(env) {
   const ok = (v) => (typeof v === 'string' && /^[A-Za-z0-9_\-.:=+]{6,128}$/.test(v.trim()) ? v.trim() : '');

@@ -78,7 +78,7 @@ describe('sitemap', () => {
 describe('search engine verification', () => {
   it('adds the Google and Bing tags only when the tokens are set', () => {
     // Google's token for vispar.ehsanfazli.ir is built in; Bing's only when set.
-    expect(verificationTags({}).map((t: { tag: string }) => t.tag)).toEqual(['<meta name="google-site-verification" content="W3UxkbPhiO52Fiff4Yk8mCIJS1YAxJrz4olhN1kddok" />']);
+    expect(verificationTags({}).map((t: { tag: string }) => t.tag)).toEqual(['<meta name="google-site-verification" content="qMovZ5uUbjXKycz0mfGVuukURhrH3A9CzAp0o_sDlxc" />']);
     const html = injectHead('<html><head><title>x</title></head><body></body></html>', { env: { GOOGLE_SITE_VERIFICATION: 'abcDEF_123-xyz', BING_SITE_VERIFICATION: '0123456789ABCDEF' } });
     expect(html).toContain('<meta name="google-site-verification" content="abcDEF_123-xyz" />');
     expect(html).toContain('<meta name="msvalidate.01" content="0123456789ABCDEF" />');
