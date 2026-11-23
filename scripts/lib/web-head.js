@@ -8,11 +8,13 @@ const DESCRIPTION = 'ویسپار؛ تماشای فیلم و سریال روی �
 /** Search engine verification tokens, from the build environment (#62). Only safe token characters. */
 /** The site's Search Console token. Public by design (it is served in the page); env can override it. */
 const GOOGLE_SITE_VERIFICATION_DEFAULT = 'qMovZ5uUbjXKycz0mfGVuukURhrH3A9CzAp0o_sDlxc';
+/** The site's Bing Webmaster Tools token. Public by design as well; env can override it. */
+const BING_SITE_VERIFICATION_DEFAULT = '9F2D8169EEB70210324B146CC40F78B7';
 
 function verificationTags(env) {
   const ok = (v) => (typeof v === 'string' && /^[A-Za-z0-9_\-.:=+]{6,128}$/.test(v.trim()) ? v.trim() : '');
   const google = ok(env.GOOGLE_SITE_VERIFICATION) || GOOGLE_SITE_VERIFICATION_DEFAULT;
-  const bing = ok(env.BING_SITE_VERIFICATION);
+  const bing = ok(env.BING_SITE_VERIFICATION) || BING_SITE_VERIFICATION_DEFAULT;
   return [
     ...(google ? [{ key: /name="google-site-verification"/, tag: `<meta name="google-site-verification" content="${google}" />` }] : []),
     ...(bing ? [{ key: /name="msvalidate\.01"/, tag: `<meta name="msvalidate.01" content="${bing}" />` }] : []),
