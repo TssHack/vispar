@@ -18,6 +18,9 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ### Fixed
 
+- **Linux: the app icon was missing in GNOME (and other desktops).** Only a 1024×1024 icon was installed, and the hicolor icon theme has no folder for that size. Every Linux package now installs 16 to 512 px icons, generated from the logo by `scripts/build-icons.js`.
+  - The window icon file was never packaged, so the window and task switcher had no icon either. It is now inside the app.
+  - The running window is now tied to its menu entry (`desktopName`, so `StartupWMClass` and the window class are both `vispar-desktop`). Checked on X11; GNOME on Wayland is checked by installing the package.
 - **Desktop builds no longer depend on finding the git remote.** Without it, electron-builder 26 built every file and then exited with an error (`Cannot read properties of null (reading 'channel')`). `desktop/package.json` now names the repository.
 
 ## [2.4.2] - 2026-11-21

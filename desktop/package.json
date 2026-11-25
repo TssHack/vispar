@@ -3,6 +3,7 @@
   "version": "2.4.2",
   "private": true,
   "description": "Vispar desktop app (Windows, macOS, Linux)",
+  "desktopName": "vispar-desktop.desktop",
   "author": "Ehsan Fazli <https://ehsanfazli.ir>",
   "homepage": "https://ehsanfazli.ir",
   "license": "MIT",
@@ -25,7 +26,7 @@
     "productName": "Vispar",
     "copyright": "Ehsan Fazli",
     "directories": { "output": "../release", "buildResources": "build" },
-    "files": ["main.js", "package.json"],
+    "files": ["main.js", "package.json", "build/icon.png"],
     "extraResources": [{ "from": "../dist", "to": "web" }],
     "artifactName": "Vispar-${version}-${os}-${arch}.${ext}",
     "win": { "target": ["nsis", "portable"],
@@ -35,7 +36,8 @@
     "mac": { "target": ["dmg", "zip"], "icon": "build/icon.png", "category": "public.app-category.entertainment" },
     "linux": {
       "target": ["AppImage", "deb", "rpm", "pacman"],
-      "icon": "build/icon.png",
+      "icon": "build/icons",
+      "syncDesktopName": true,
       "category": "AudioVideo",
       "maintainer": "Ehsan Fazli <ehsanfazlinejad@gmail.com>",
       "synopsis": "Movies and series"
