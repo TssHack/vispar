@@ -4,6 +4,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Changed
+
+- **Web, PWA and desktop load the fonts in half the size.** The first screen waits for all five Arad weights; they are now WOFF2 (126 KB) instead of TTF (290 KB), with identical glyphs. Android and iOS keep the TTF files. `scripts/build-fonts.py` writes both.
+
 ## [2.4.2] - 2026-11-21
 
 ### Fixed
