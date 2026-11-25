@@ -6,6 +6,7 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ### Changed
 
+- **The web app and PWA stop downloading the app again on every visit.** The service worker served the cached JavaScript and fonts but also fetched every one of them again in the background, so each visit downloaded the whole app (about 1.5 MB) for nothing. Those files have the content hash in their name and never change, so they now come from the cache alone. Measured over three loads: 30 downloads of the hashed files before, 10 after (each once). Old files from earlier releases are removed from the cache instead of piling up. Icons, whose names do not change, still refresh in the background.
 - **Web, PWA and desktop load the fonts in half the size.** The first screen waits for all five Arad weights; they are now WOFF2 (126 KB) instead of TTF (290 KB), with identical glyphs. Android and iOS keep the TTF files. `scripts/build-fonts.py` writes both.
 - **A smaller web bundle.** `expo-notifications`, `expo-updates` and `expo-intent-launcher` only work on Android and iOS, but the web build bundled them because they were imported unconditionally. The web build now gets small platform stubs instead (`*.web.ts`): the shared chunk is 406 → 320 KB (106 → 87 KB gzipped), and none of the three modules is in the web bundle. Native builds are unchanged; web notifications already used the browser's Notification API.
 
