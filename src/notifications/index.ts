@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
 
+import { expoNotifications } from './native';
+
 export type NotifyPermission = 'granted' | 'denied' | 'default' | 'unsupported';
 
 export type LocalNotice = { title: string; body: string; /** In-app path opened when tapped. */ url?: string };
@@ -11,8 +13,8 @@ let native: NativeNotifications | null = null;
 function loadNative(): NativeNotifications | null {
   if (isWeb || Platform.isTV) return null;
   if (!native) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    native = require('expo-notifications') as NativeNotifications;
+    native = expoNotifications();
+    if (!native) return null;
     native.setNotificationHandler({
       handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
     });

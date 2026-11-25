@@ -2,6 +2,7 @@
 const VERSION = 'v1';
 const SHELL = `vispar-shell-${VERSION}`;
 const ASSETS = `vispar-assets-${VERSION}`;
+const ASSET_LIMIT = 60;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(SHELL).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icons/icon-192.png'])).then(() => self.skipWaiting()));
@@ -36,8 +37,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Hashed build output, fonts and icons: cache first, refresh in the background.
-  if (/^\/(_expo|assets|icons)\//.test(url.pathname)) {
+  // Hashed build output and fonts (/_expo/, /assets/): the file name changes with the content, so a
+  // cached copy never goes stale. Serve it from the cache with no request at all; fetch only on a miss.
+  if (/^\/(_expo|assets)\//.test(url.pathname)) {
+    event.respondWith(
+      caches.open(ASSETS).then(async (cache) => {
+        const hit = await cache.match(req);
+        if (hit) return hit;
+        const res = await fetch(req);
+        if (res.ok) {
+          await cache.put(req, res.clone());
+          await trim(cache, ASSET_LIMIT).catch(() => {});
+        }
+        return res;
+      }),
+    );
+    return;
+  }
+
+  // Icons keep their names across releases: cached copy now, refreshed in the background.
+  if (/^\/icons\//.test(url.pathname)) {
     event.respondWith(
       caches.open(ASSETS).then(async (cache) => {
         const hit = await cache.match(req);
@@ -52,6 +71,15 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+/**
+ * Every deploy adds new hashed files and the old ones are never asked for again. Keep the newest
+ * entries only (the cache lists them oldest first); one release is about a dozen files.
+ */
+async function trim(cache, max) {
+  const keys = await cache.keys();
+  await Promise.all(keys.slice(0, Math.max(0, keys.length - max)).map((k) => cache.delete(k)));
+}
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();

@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import Constants from 'expo-constants';
-import * as Updates from 'expo-updates';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState, Linking, Platform } from 'react-native';
 
@@ -9,6 +8,7 @@ import { api } from '@/api/client';
 import type { GithubRelease } from '@/api/types';
 import { repoUrl } from '@/config';
 
+import * as Updates from './ota';
 import { releaseTarget } from './target';
 import { findUpdate, pickAsset } from './version';
 
