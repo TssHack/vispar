@@ -10,6 +10,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
   - The Arch package lists dependencies that exist in the Arch repositories. electron-builder's defaults include `http-parser`, which is only in the AUR, so `pacman -U` would refuse the package.
   - The `.rpm` skips `/usr/lib/.build-id` links, so it does not conflict with other Electron apps on Fedora.
 
+### Added
+
+- **`npm run test:linux-packages`**: installs the built Linux packages on clean Arch, Fedora, Debian and Ubuntu containers (Docker or Podman, on your machine) and checks that each installs with its package manager, has no missing library, has its menu entry and icons, and opens its window. It is how the ALSA bug below was found.
+
 ### Fixed
 
 - **Linux: the app icon was missing in GNOME (and other desktops).** Only a 1024×1024 icon was installed, and the hicolor icon theme has no folder for that size. Every Linux package now installs 16 to 512 px icons, generated from the logo by `scripts/build-icons.js`.

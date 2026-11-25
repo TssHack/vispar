@@ -54,6 +54,7 @@
     "brand:pwa": "node scripts/build-pwa-icons.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:linux-packages": "bash scripts/linux-packages/test.sh",
     "brand:icons": "node scripts/build-icons.js"
   },
   "private": true,
