@@ -127,7 +127,7 @@ export function UpdateSheet() {
             {assetKind && asset ? (
               <View style={{ borderRadius: 14, backgroundColor: colors.surface2, padding: 12, gap: 4 }}>
                 <Text size={12} color="muted">
-                  {assetKind === 'appimage' ? 'بعد از دانلود، فایل قبلی را با این فایل جایگزین و اجرایی کنید:' : 'بعد از دانلود، در ترمینال نصب کنید:'}
+                  {assetKind === 'appimage' ? 'بعد از دانلود، فایل قبلی را با این فایل جایگزین و اجرایی کنید:' : 'بعد از دانلود، ترمینال را در پوشه‌ی دانلود باز کنید و بزنید:'}
                 </Text>
                 <Text selectable size={13} weight={600} color="text2" style={{ writingDirection: 'ltr', textAlign: 'left' }}>
                   {installCommand(asset.name, assetKind)}
