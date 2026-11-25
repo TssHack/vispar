@@ -4,6 +4,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Changed
+
+- **Desktop apps without 53 unused Chromium languages.** Electron ships its own interface strings in 55 languages (44 MB); the app has no Chromium menus and is in Persian, so only `fa` and `en-US` (Chromium's fallback) are kept. Measured on Linux: installed size 42 MB smaller; AppImage 110 → 99 MB, `.deb` 86 → 78 MB, `.rpm` 77 → 70 MB, `.pacman` 78 → 71 MB. Checked with a Persian and a German system language: the app opens and works in both.
+
 ## [2.4.2] - 2026-11-21
 
 ### Fixed

@@ -20,6 +20,7 @@
     "appId": "com.fazli.vispar",
     "productName": "Vispar",
     "copyright": "Ehsan Fazli",
+    "electronLanguages": ["fa", "en-US"],
     "directories": { "output": "../release", "buildResources": "build" },
     "files": ["main.js", "package.json"],
     "extraResources": [{ "from": "../dist", "to": "web" }],
