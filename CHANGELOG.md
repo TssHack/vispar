@@ -7,6 +7,7 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 ### Changed
 
 - **Web, PWA and desktop load the fonts in half the size.** The first screen waits for all five Arad weights; they are now WOFF2 (126 KB) instead of TTF (290 KB), with identical glyphs. Android and iOS keep the TTF files. `scripts/build-fonts.py` writes both.
+- **A smaller web bundle.** `expo-notifications`, `expo-updates` and `expo-intent-launcher` only work on Android and iOS, but the web build bundled them because they were imported unconditionally. The web build now gets small platform stubs instead (`*.web.ts`): the shared chunk is 406 → 320 KB (106 → 87 KB gzipped), and none of the three modules is in the web bundle. Native builds are unchanged; web notifications already used the browser's Notification API.
 
 ## [2.4.2] - 2026-11-21
 
