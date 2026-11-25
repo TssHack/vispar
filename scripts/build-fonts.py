@@ -3,7 +3,10 @@
 React Native on Android can't select weights from a variable font, so the app ships one
 static file per weight. Each file gets its own PostScript name so iOS doesn't merge them.
 
-Usage:  pip install fonttools && python3 scripts/build-fonts.py
+It also writes a WOFF2 copy of each weight for the web build (half the size of the TTF; the web,
+PWA and desktop apps wait for these fonts before the first screen).
+
+Usage:  pip install fonttools brotli && python3 scripts/build-fonts.py
 """
 from pathlib import Path
 
@@ -46,3 +49,7 @@ for style, weight in WEIGHTS.items():
     out = FONTS / f"Arad-{style}.ttf"
     static.save(out)
     print("wrote", out.name)
+    web = TTFont(out)
+    web.flavor = "woff2"
+    web.save(out.with_suffix(".woff2"))
+    print("wrote", out.with_suffix(".woff2").name)
