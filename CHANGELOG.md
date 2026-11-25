@@ -4,6 +4,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Changed
+
+- **Smaller desktop apps.** The web build prerenders 18,000 title pages, list pages and a sitemap for search engines; the desktop packages carried all of them, but the desktop app never opens them (it serves `index.html` for every route). They are now left out, with `og.png`, `robots.txt` and `app.html`. Measured on Linux: installed size 506 → 286 MB, AppImage 150 → 111 MB, `.pacman` 87 → 79 MB.
+
 ## [2.4.2] - 2026-11-21
 
 ### Fixed
