@@ -1,9 +1,9 @@
 import * as Clipboard from 'expo-clipboard';
-import * as IntentLauncher from 'expo-intent-launcher';
 import { Linking, Platform, Share } from 'react-native';
 
 import { toast } from '@/components/Toast';
 
+import * as IntentLauncher from './intentLauncher';
 import { ALL_APPS, appStoreUrl, m3uPlaylist, playStoreUrl, androidIntentUrl, playStoreWebUrl, type ExternalApp, type ExternalKind } from './apps';
 
 const VIEW = 'android.intent.action.VIEW';

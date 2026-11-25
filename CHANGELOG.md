@@ -4,9 +4,25 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Added
+
+- **Linux: `.rpm` for Fedora and `.pacman` for Arch** in every release, next to the AppImage and `.deb`. Install with `sudo dnf install ./Vispar-*.rpm` or `sudo pacman -U Vispar-*.pacman`.
+  - The Arch package lists dependencies that exist in the Arch repositories. electron-builder's defaults include `http-parser`, which is only in the AUR, so `pacman -U` would refuse the package.
+  - The `.rpm` skips `/usr/lib/.build-id` links, so it does not conflict with other Electron apps on Fedora.
+
 ### Changed
 
 - **Smaller desktop apps.** The web build prerenders 18,000 title pages, list pages and a sitemap for search engines; the desktop packages carried all of them, but the desktop app never opens them (it serves `index.html` for every route). They are now left out, with `og.png`, `robots.txt` and `app.html`. Measured on Linux: installed size 506 → 286 MB, AppImage 150 → 111 MB, `.pacman` 87 → 79 MB.
+- **The web app and PWA stop downloading the app again on every visit.** The service worker served the cached JavaScript and fonts but also fetched every one of them again in the background, so each visit downloaded the whole app (about 1.5 MB) for nothing. Those files have the content hash in their name and never change, so they now come from the cache alone. Measured over three loads: 30 downloads of the hashed files before, 10 after (each once). Old files from earlier releases are removed from the cache instead of piling up. Icons, whose names do not change, still refresh in the background.
+- **Web, PWA and desktop load the fonts in half the size.** The first screen waits for all five Arad weights; they are now WOFF2 (126 KB) instead of TTF (290 KB), with identical glyphs. Android and iOS keep the TTF files. `scripts/build-fonts.py` writes both.
+- **A smaller web bundle.** `expo-notifications`, `expo-updates` and `expo-intent-launcher` only work on Android and iOS, but the web build bundled them because they were imported unconditionally. The web build now gets small platform stubs instead (`*.web.ts`): the shared chunk is 406 → 320 KB (106 → 87 KB gzipped), and none of the three modules is in the web bundle. Native builds are unchanged; web notifications already used the browser's Notification API.
+
+### Fixed
+
+- **Linux: the app icon was missing in GNOME (and other desktops).** Only a 1024×1024 icon was installed, and the hicolor icon theme has no folder for that size. Every Linux package now installs 16 to 512 px icons, generated from the logo by `scripts/build-icons.js`.
+  - The window icon file was never packaged, so the window and task switcher had no icon either. It is now inside the app.
+  - The running window is now tied to its menu entry (`desktopName`, so `StartupWMClass` and the window class are both `vispar-desktop`). Checked on X11; GNOME on Wayland is checked by installing the package.
+- **Desktop builds no longer depend on finding the git remote.** Without it, electron-builder 26 built every file and then exited with an error (`Cannot read properties of null (reading 'channel')`). `desktop/package.json` now names the repository.
 
 ## [2.4.2] - 2026-11-21
 
