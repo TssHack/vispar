@@ -4,6 +4,16 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Added
+
+- **Linux: `.rpm` for Fedora and `.pacman` for Arch** in every release, next to the AppImage and `.deb`. Install with `sudo dnf install ./Vispar-*.rpm` or `sudo pacman -U Vispar-*.pacman`.
+  - The Arch package lists dependencies that exist in the Arch repositories. electron-builder's defaults include `http-parser`, which is only in the AUR, so `pacman -U` would refuse the package.
+  - The `.rpm` skips `/usr/lib/.build-id` links, so it does not conflict with other Electron apps on Fedora.
+
+### Fixed
+
+- **Desktop builds no longer depend on finding the git remote.** Without it, electron-builder 26 built every file and then exited with an error (`Cannot read properties of null (reading 'channel')`). `desktop/package.json` now names the repository.
+
 ## [2.4.2] - 2026-11-21
 
 ### Fixed
