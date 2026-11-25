@@ -9,10 +9,15 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 - **Linux: `.rpm` for Fedora and `.pacman` for Arch** in every release, next to the AppImage and `.deb`. Install with `sudo dnf install ./Vispar-*.rpm` or `sudo pacman -U Vispar-*.pacman`.
   - The Arch package lists dependencies that exist in the Arch repositories. electron-builder's defaults include `http-parser`, which is only in the AUR, so `pacman -U` would refuse the package.
   - The `.rpm` skips `/usr/lib/.build-id` links, so it does not conflict with other Electron apps on Fedora.
-
-### Added
-
 - **`npm run test:linux-packages`**: installs the built Linux packages on clean Arch, Fedora, Debian and Ubuntu containers (Docker or Podman, on your machine) and checks that each installs with its package manager, has no missing library, has its menu entry and icons, and opens its window. It is how the ALSA bug below was found.
+
+### Changed
+
+- **Desktop apps without 53 unused Chromium languages.** Electron ships its own interface strings in 55 languages (44 MB); the app has no Chromium menus and is in Persian, so only `fa` and `en-US` (Chromium's fallback) are kept. Measured on Linux: installed size 42 MB smaller; AppImage 110 → 99 MB, `.deb` 86 → 78 MB, `.rpm` 77 → 70 MB, `.pacman` 78 → 71 MB. Checked with a Persian and a German system language: the app opens and works in both.
+- **Smaller desktop apps.** The web build prerenders 18,000 title pages, list pages and a sitemap for search engines; the desktop packages carried all of them, but the desktop app never opens them (it serves `index.html` for every route). They are now left out, with `og.png`, `robots.txt` and `app.html`. Measured on Linux: installed size 506 → 286 MB, AppImage 150 → 111 MB, `.pacman` 87 → 79 MB.
+- **The web app and PWA stop downloading the app again on every visit.** The service worker served the cached JavaScript and fonts but also fetched every one of them again in the background, so each visit downloaded the whole app (about 1.5 MB) for nothing. Those files have the content hash in their name and never change, so they now come from the cache alone. Measured over three loads: 30 downloads of the hashed files before, 10 after (each once). Old files from earlier releases are removed from the cache instead of piling up. Icons, whose names do not change, still refresh in the background.
+- **Web, PWA and desktop load the fonts in half the size.** The first screen waits for all five Arad weights; they are now WOFF2 (126 KB) instead of TTF (290 KB), with identical glyphs. Android and iOS keep the TTF files. `scripts/build-fonts.py` writes both.
+- **A smaller web bundle.** `expo-notifications`, `expo-updates` and `expo-intent-launcher` only work on Android and iOS, but the web build bundled them because they were imported unconditionally. The web build now gets small platform stubs instead (`*.web.ts`): the shared chunk is 406 → 320 KB (106 → 87 KB gzipped), and none of the three modules is in the web bundle. Native builds are unchanged; web notifications already used the browser's Notification API.
 
 ### Fixed
 
