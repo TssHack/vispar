@@ -10,6 +10,15 @@ const markAt = (size, inner, mono) => {
 };
 (async () => {
   await s(icon).resize(1024, 1024).png().toFile(P + '/icon.png');
+  // Desktop (Electron): the 1024 px icon for Windows/macOS and the window, and one PNG per size for
+  // Linux. Linux installs these into the hicolor theme, which has no 1024x1024 folder, so GNOME and
+  // KDE only find the app icon when the standard sizes exist.
+  const D = require('path').join(__dirname, '..', 'desktop', 'build');
+  await s(icon).resize(1024, 1024).png().toFile(D + '/icon.png');
+  fs.mkdirSync(D + '/icons', { recursive: true });
+  for (const n of [16, 24, 32, 48, 64, 128, 256, 512]) {
+    await s(icon).resize(n, n).png().toFile(`${D}/icons/${n}x${n}.png`);
+  }
   // Android adaptive: safe zone is the inner 66%
   await s(markAt(1024, 600)).png().toFile(P + '/android-icon-foreground.png');
   await s(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><defs><radialGradient id="bg" cx=".32" cy=".18" r=".95"><stop offset="0" stop-color="#33231A"/><stop offset=".55" stop-color="#120E13"/><stop offset="1" stop-color="#08080C"/></radialGradient></defs><rect width="1024" height="1024" fill="url(#bg)"/></svg>')).png().toFile(P + '/android-icon-background.png');
