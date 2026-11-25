@@ -15,6 +15,7 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 - **Linux: the app icon was missing in GNOME (and other desktops).** Only a 1024×1024 icon was installed, and the hicolor icon theme has no folder for that size. Every Linux package now installs 16 to 512 px icons, generated from the logo by `scripts/build-icons.js`.
   - The window icon file was never packaged, so the window and task switcher had no icon either. It is now inside the app.
   - The running window is now tied to its menu entry (`desktopName`, so `StartupWMClass` and the window class are both `vispar-desktop`). Checked on X11; GNOME on Wayland is checked by installing the package.
+- **Linux: the `.deb` did not start on a minimal Debian or Ubuntu** (`libasound.so.2` not found). It never listed ALSA as a dependency; desktops usually have it, so it went unnoticed until the package was installed on a clean system. The `.deb` now depends on `libasound2t64` (Ubuntu 24.04, Debian 13) or `libasound2` (older releases), in that order: on Ubuntu 24.04 the name `libasound2` resolves to an OSS emulation library that lacks ALSA functions, and the app crashed at start. The `.rpm` now depends on `alsa-lib`, which Fedora only had because another package pulled it in.
 - **Desktop builds no longer depend on finding the git remote.** Without it, electron-builder 26 built every file and then exited with an error (`Cannot read properties of null (reading 'channel')`). `desktop/package.json` now names the repository.
 
 ## [2.4.2] - 2026-11-21
