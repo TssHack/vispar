@@ -25,6 +25,10 @@ declare -A IMAGE=([arch]=archlinux:latest [fedora]=fedora:latest [debian]=debian
 declare -A EXT=([arch]=pacman [fedora]=rpm [debian]=deb [ubuntu]=deb)
 DISTROS=("$@")
 [ ${#DISTROS[@]} -eq 0 ] && DISTROS=(arch fedora debian ubuntu appimage)
+# Check every name before anything runs, so a typo does not stop the run halfway.
+for d in "${DISTROS[@]}"; do
+  [ "$d" = appimage ] || [ -n "${IMAGE[$d]:-}" ] || { echo "Unknown distribution: $d (arch, fedora, debian, ubuntu, appimage)"; exit 2; }
+done
 
 check_appimage() {  # file, scratch dir
   local root="$2/squashfs-root" n
@@ -52,7 +56,6 @@ for d in "${DISTROS[@]}"; do
     chmod -R u+w "$tmp" 2>/dev/null; rm -rf "$tmp"
     continue
   fi
-  [ -n "${IMAGE[$d]:-}" ] || { echo "Unknown distribution: $d (arch, fedora, debian, ubuntu, appimage)"; exit 2; }
   file="$(newest "${EXT[$d]}")"
   [ -n "$file" ] || { RESULT[$d]="SKIP (no .${EXT[$d]})"; continue; }
   echo "### $d (${IMAGE[$d]}): $(basename "$file")"
@@ -70,8 +73,14 @@ done
 echo
 echo "Result"
 failed=0
+ran=0
 for d in "${DISTROS[@]}"; do
   printf '  %-9s %s\n' "$d" "${RESULT[$d]}"
-  case "${RESULT[$d]}" in FAIL*) failed=1; echo "            full log: $LOGS/$d.log" ;; esac
+  case "${RESULT[$d]}" in
+    PASS*) ran=1 ;;
+    FAIL*) ran=1; failed=1; [ -f "$LOGS/$d.log" ] && echo "            full log: $LOGS/$d.log" ;;
+  esac
 done
+# Nothing tested is not a pass: usually the packages were not built, or RELEASE_DIR is wrong.
+if [ $ran -eq 0 ]; then echo; echo "Nothing was tested: no packages in $RELEASE_DIR"; exit 2; fi
 exit $failed
