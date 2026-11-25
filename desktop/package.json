@@ -3,9 +3,14 @@
   "version": "2.4.2",
   "private": true,
   "description": "Vispar desktop app (Windows, macOS, Linux)",
+  "desktopName": "vispar-desktop.desktop",
   "author": "Ehsan Fazli <https://ehsanfazli.ir>",
   "homepage": "https://ehsanfazli.ir",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tsshack/vispar"
+  },
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -22,8 +27,14 @@
     "copyright": "Ehsan Fazli",
     "electronLanguages": ["fa", "en-US"],
     "directories": { "output": "../release", "buildResources": "build" },
-    "files": ["main.js", "package.json"],
-    "extraResources": [{ "from": "../dist", "to": "web" }],
+    "files": ["main.js", "package.json", "build/icon.png"],
+    "extraResources": [
+      {
+        "from": "../dist",
+        "to": "web",
+        "filter": ["**/*", "!movie/**", "!series/**", "!movies/**", "!app.html", "!sitemap.xml", "!robots.txt", "!og.png"]
+      }
+    ],
     "artifactName": "Vispar-${version}-${os}-${arch}.${ext}",
     "win": { "target": ["nsis", "portable"],
       "artifactName": "Vispar-${version}-win-${arch}.${ext}", "icon": "build/icon.png" },
@@ -31,11 +42,31 @@
     "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
     "mac": { "target": ["dmg", "zip"], "icon": "build/icon.png", "category": "public.app-category.entertainment" },
     "linux": {
-      "target": ["AppImage", "deb"],
-      "icon": "build/icon.png",
+      "target": ["AppImage", "deb", "rpm", "pacman"],
+      "icon": "build/icons",
+      "syncDesktopName": true,
       "category": "AudioVideo",
       "maintainer": "Ehsan Fazli <ehsanfazlinejad@gmail.com>",
       "synopsis": "Movies and series"
+    },
+    "rpm": {
+      "fpm": ["--rpm-rpmbuild-define", "_build_id_links none"]
+    },
+    "pacman": {
+      "fpm": ["--description", "Vispar: movies and series"],
+      "depends": [
+        "gtk3",
+        "nss",
+        "alsa-lib",
+        "libxss",
+        "libxtst",
+        "libnotify",
+        "at-spi2-core",
+        "util-linux-libs",
+        "libsecret",
+        "mesa",
+        "xdg-utils"
+      ]
     }
   }
 }
