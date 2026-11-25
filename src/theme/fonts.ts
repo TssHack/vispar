@@ -1,15 +1,11 @@
 /**
  * Arad (OFL) is shipped as a variable font. React Native on Android cannot pick weights from a
  * variable font, so assets/fonts holds static instances cut from Arad-VF.ttf (scripts/build-fonts.py).
- * Each weight is registered as its own family and picked by `fontFor(weight)`.
+ * Each weight is registered as its own family and picked by `fontFor(weight)`. The files are listed
+ * in fontFiles.ts (TTF, native) and fontFiles.web.ts (WOFF2, web and desktop).
  */
-export const fontFiles = {
-  'Arad-Regular': require('../../assets/fonts/Arad-Regular.ttf'),
-  'Arad-Medium': require('../../assets/fonts/Arad-Medium.ttf'),
-  'Arad-SemiBold': require('../../assets/fonts/Arad-SemiBold.ttf'),
-  'Arad-Bold': require('../../assets/fonts/Arad-Bold.ttf'),
-  'Arad-ExtraBold': require('../../assets/fonts/Arad-ExtraBold.ttf'),
-};
+export { fontFiles } from './fontFiles';
+import type { fontFiles } from './fontFiles';
 
 export type Weight = 400 | 500 | 600 | 700 | 800;
 
