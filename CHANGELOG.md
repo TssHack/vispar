@@ -4,6 +4,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Changed
+
+- **A smaller web bundle.** `expo-notifications`, `expo-updates` and `expo-intent-launcher` only work on Android and iOS, but the web build bundled them because they were imported unconditionally. The web build now gets small platform stubs instead (`*.web.ts`): the shared chunk is 406 → 320 KB (106 → 87 KB gzipped), and none of the three modules is in the web bundle. Native builds are unchanged; web notifications already used the browser's Notification API.
+
 ## [2.4.2] - 2026-11-21
 
 ### Fixed
