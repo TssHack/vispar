@@ -27,7 +27,13 @@
     "copyright": "Ehsan Fazli",
     "directories": { "output": "../release", "buildResources": "build" },
     "files": ["main.js", "package.json", "build/icon.png"],
-    "extraResources": [{ "from": "../dist", "to": "web" }],
+    "extraResources": [
+      {
+        "from": "../dist",
+        "to": "web",
+        "filter": ["**/*", "!movie/**", "!series/**", "!movies/**", "!app.html", "!sitemap.xml", "!robots.txt", "!og.png"]
+      }
+    ],
     "artifactName": "Vispar-${version}-${os}-${arch}.${ext}",
     "win": { "target": ["nsis", "portable"],
       "artifactName": "Vispar-${version}-win-${arch}.${ext}", "icon": "build/icon.png" },
