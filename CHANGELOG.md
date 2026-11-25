@@ -4,6 +4,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Changed
+
+- **Linux: the update offer matches how you installed Vispar.** A `.deb`, `.rpm` or `.pacman` install is offered the same format, so your package manager keeps tracking it; an AppImage gets the AppImage. The update sheet names the format and shows the command that installs the file. When the release has no file of that format, or the app cannot tell, it offers the AppImage as before.
+
 ## [2.4.2] - 2026-11-21
 
 ### Fixed

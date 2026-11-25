@@ -10,9 +10,12 @@ import { useLayout } from '@/hooks/useLayout';
 import { faNum, faVersion } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { installCommand, linuxPackageOf, type LinuxPackage } from './linuxPackage';
 import { releaseTarget, TARGET_LABEL } from './target';
 import { useUpdates } from './UpdateProvider';
 import { pickAsset } from './version';
+
+const KIND_LABEL: Record<LinuxPackage, string> = { appimage: 'AppImage', deb: 'deb', rpm: 'rpm', pacman: 'pacman' };
 
 function formatSize(bytes: number | null) {
   if (!bytes) return '';
@@ -41,14 +44,16 @@ function cleanNotes(md: string) {
 }
 
 export function UpdateSheet() {
-  const { sheetOpen, release, currentVersion, install, dismiss, skipThisVersion } = useUpdates();
+  const { sheetOpen, release, currentVersion, linuxPackage, install, dismiss, skipThisVersion } = useUpdates();
   const { colors } = useTheme();
   const { isWide, isTV } = useLayout();
   const insets = useSafeAreaInsets();
   if (!release) return null;
   const notes = cleanNotes(release.body);
   const target = releaseTarget();
-  const asset = target ? pickAsset(release, target, { tv: Platform.isTV }) : null;
+  const asset = target ? pickAsset(release, target, { tv: Platform.isTV, linuxPackage }) : null;
+  // Linux: the format of the file offered (it can differ from the install when the release lacks it).
+  const assetKind = target === 'linux' && asset ? linuxPackageOf(asset.name) : null;
   const centered = isWide || isTV;
 
   return (
@@ -109,12 +114,26 @@ export function UpdateSheet() {
 
           <View style={{ gap: 10 }}>
             <Button
-              label={asset ? `دانلود برای ${target ? TARGET_LABEL[target] : ''}${asset.size ? ` · ${formatSize(asset.size)}` : ''}` : 'مشاهده در گیت‌هاب'}
+              label={
+                asset
+                  ? `دانلود برای ${target ? TARGET_LABEL[target] : ''}${assetKind ? ` (${KIND_LABEL[assetKind]})` : ''}${asset.size ? ` · ${formatSize(asset.size)}` : ''}`
+                  : 'مشاهده در گیت‌هاب'
+              }
               icon="download"
               size="lg"
               onPress={install}
               hasTVPreferredFocus
             />
+            {assetKind && asset ? (
+              <View style={{ borderRadius: 14, backgroundColor: colors.surface2, padding: 12, gap: 4 }}>
+                <Text size={12} color="muted">
+                  {assetKind === 'appimage' ? 'بعد از دانلود، فایل قبلی را با این فایل جایگزین و اجرایی کنید:' : 'بعد از دانلود، در ترمینال نصب کنید:'}
+                </Text>
+                <Text selectable size={13} weight={600} color="text2" style={{ writingDirection: 'ltr', textAlign: 'left' }}>
+                  {installCommand(asset.name, assetKind)}
+                </Text>
+              </View>
+            ) : null}
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button label="بعداً" variant="surface" onPress={dismiss} style={{ flex: 1 }} />
               <Button label="رد شدن از این نسخه" variant="ghost" onPress={skipThisVersion} style={{ flex: 1 }} />

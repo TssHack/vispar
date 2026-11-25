@@ -1,5 +1,7 @@
 import type { GithubRelease, ReleaseAsset } from '@/api/types';
 
+import { LINUX_EXT, type LinuxPackage } from './linuxPackage';
+
 export type ReleaseTarget = 'android' | 'windows' | 'mac' | 'linux';
 
 /** "v2.1.0", "2.1", "release-2.1.0-beta" → [2, 1, 0]. Returns null when no number is found. */
@@ -33,8 +35,17 @@ export function findUpdate(releases: GithubRelease[], current: string, opts: { i
   return compareVersions(latest.tagName, current) > 0 ? latest : null;
 }
 
-/** Picks the installer for a platform out of a release's files (Windows prefers the setup over the portable build). */
-export function pickAsset(release: Pick<GithubRelease, 'assets'>, target: ReleaseTarget, opts: { tv?: boolean } = {}): ReleaseAsset | null {
+/**
+ * Picks the installer for a platform out of a release's files (Windows prefers the setup over the
+ * portable build). On Linux, `linuxPackage` is how this copy was installed: a deb/rpm/pacman install
+ * gets the same format, so the package manager keeps tracking it. When it is unknown, or the release
+ * has no file of that format, the AppImage (runs on any distribution) and then the .deb.
+ */
+export function pickAsset(
+  release: Pick<GithubRelease, 'assets'>,
+  target: ReleaseTarget,
+  opts: { tv?: boolean; linuxPackage?: LinuxPackage | null } = {},
+): ReleaseAsset | null {
   const has = (a: ReleaseAsset, ...ext: string[]) => ext.some((e) => a.name.toLowerCase().endsWith(e));
   const list = release.assets;
   switch (target) {
@@ -51,6 +62,11 @@ export function pickAsset(release: Pick<GithubRelease, 'assets'>, target: Releas
     case 'mac':
       return list.find((a) => has(a, '.dmg')) ?? list.find((a) => has(a, '.zip') && /mac|darwin/i.test(a.name)) ?? null;
     case 'linux':
-      return list.find((a) => has(a, '.appimage')) ?? list.find((a) => has(a, '.deb')) ?? null;
+      return (
+        (opts.linuxPackage ? list.find((a) => has(a, LINUX_EXT[opts.linuxPackage!])) : undefined) ??
+        list.find((a) => has(a, '.appimage')) ??
+        list.find((a) => has(a, '.deb')) ??
+        null
+      );
   }
 }

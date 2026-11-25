@@ -5,6 +5,23 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
+/**
+ * How this copy was installed, so the in-app updater offers the same format. The AppImage runtime
+ * sets APPIMAGE; electron-builder writes resources/package-type ("deb", "rpm" or "pacman") into
+ * those packages. Null on Windows and macOS, in a dev run, and for other formats.
+ */
+function linuxInstallKind() {
+  if (process.platform !== 'linux') return null;
+  if (process.env.APPIMAGE) return 'appimage';
+  try {
+    const kind = fs.readFileSync(path.join(process.resourcesPath, 'package-type'), 'utf8').trim();
+    return ['deb', 'rpm', 'pacman'].includes(kind) ? kind : null;
+  } catch {
+    return null;
+  }
+}
+const INSTALL_KIND = linuxInstallKind();
+
 const WEB_ROOT = app.isPackaged ? path.join(process.resourcesPath, 'web') : path.join(__dirname, '..', 'dist');
 const ORIGIN = 'app://vispar';
 
@@ -20,6 +37,7 @@ function registerProtocol() {
     const reqUrl = new URL(request.url);
     const { pathname } = reqUrl;
     if (pathname === '/_media') return relayMedia(request, reqUrl.searchParams.get('u'));
+    if (pathname === '/_install') return Response.json({ kind: INSTALL_KIND });
     const rel = decodeURIComponent(pathname).replace(/^\/+/, '');
     let file = path.normalize(path.join(WEB_ROOT, rel));
     if (!file.startsWith(WEB_ROOT)) return new Response('Forbidden', { status: 403 });

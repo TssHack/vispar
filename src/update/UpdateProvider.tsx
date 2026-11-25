@@ -9,6 +9,7 @@ import { api } from '@/api/client';
 import type { GithubRelease } from '@/api/types';
 import { repoUrl } from '@/config';
 
+import { readLinuxPackage, type LinuxPackage } from './linuxPackage';
 import { releaseTarget } from './target';
 import { findUpdate, pickAsset } from './version';
 
@@ -30,6 +31,8 @@ type UpdateContextValue = {
   /** The release sheet is open. */
   sheetOpen: boolean;
   lastCheckedAt: number | null;
+  /** Linux desktop only: how this copy was installed (null when unknown or not Linux). */
+  linuxPackage: LinuxPackage | null;
   checkNow: (opts?: { silent?: boolean }) => Promise<void>;
   install: () => void;
   dismiss: () => void;
@@ -52,7 +55,20 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [otaReady, setOtaReady] = useState(false);
   const [lastCheckedAt, setLastCheckedAt] = useState<number | null>(null);
+  const [linuxPackage, setLinuxPackage] = useState<LinuxPackage | null>(null);
   const busy = useRef(false);
+
+  // The desktop shell knows whether it is an AppImage or a deb/rpm/pacman install.
+  useEffect(() => {
+    if (target !== 'linux') return;
+    let alive = true;
+    readLinuxPackage().then((kind) => {
+      if (alive) setLinuxPackage(kind);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const checkOta = useCallback(async () => {
     if (!otaSupported) return;
@@ -118,10 +134,10 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
   }, [checkNow, checkOta]);
 
   const install = useCallback(() => {
-    const asset = release && target ? pickAsset(release, target, { tv: Platform.isTV }) : null;
+    const asset = release && target ? pickAsset(release, target, { tv: Platform.isTV, linuxPackage }) : null;
     const url = asset?.url ?? release?.htmlUrl ?? `${repoUrl}/releases/latest`;
     Linking.openURL(url).catch(() => {});
-  }, [release]);
+  }, [release, linuxPackage]);
 
   const value = useMemo<UpdateContextValue>(
     () => ({
@@ -132,6 +148,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       otaReady,
       sheetOpen,
       lastCheckedAt,
+      linuxPackage,
       checkNow,
       install,
       dismiss: () => setSheetOpen(false),
@@ -143,7 +160,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
         Updates.reloadAsync().catch(() => {});
       },
     }),
-    [status, release, otaReady, sheetOpen, lastCheckedAt, checkNow, install],
+    [status, release, otaReady, sheetOpen, lastCheckedAt, linuxPackage, checkNow, install],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
