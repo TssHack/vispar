@@ -101,7 +101,7 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 | Web / PWA | [vispar.ehsanfazli.ir](https://vispar.ehsanfazli.ir), or `npm run build:web` and host the `dist/` folder (`vercel.json` is included) |
 | Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
 | macOS | `Vispar-*-mac-*.dmg` |
-| Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
+| Linux | `Vispar-*-linux-*.AppImage` (any distro), `.deb` (Debian, Ubuntu), `.rpm` (Fedora: `sudo dnf install ./Vispar-*.rpm`) or `.pacman` (Arch: `sudo pacman -U Vispar-*.pacman`) |
 
 Both APKs are built on GitHub's runners by the **Android builds** workflow (`.github/workflows/android.yml`, no EAS account needed). They are signed with the standard debug key, so they install directly but are not meant for the Play Store. Install the TV APK from a USB drive or with `adb install`. For emulators and Chromebooks there are smaller `-x86_64` APKs (`Vispar-*-android-x86_64.apk`, `Vispar-*-android-tv-x86_64.apk`).
 
@@ -177,7 +177,7 @@ Preview the TV layout in any browser with `?tv=1`, the iOS install guide with `?
 | Web / PWA | [vispar.ehsanfazli.ir](https://vispar.ehsanfazli.ir), or `npm run build:web` and host the `dist/` folder (`vercel.json` is included) |
 | Windows | `Vispar-*-win-*.exe` (installer) or the portable build |
 | macOS | `Vispar-*-mac-*.dmg` |
-| Linux | `Vispar-*-linux-*.AppImage` or `.deb` |
+| Linux | `Vispar-*-linux-*.AppImage` (any distro), `.deb` (Debian, Ubuntu), `.rpm` (Fedora: `sudo dnf install ./Vispar-*.rpm`) or `.pacman` (Arch: `sudo pacman -U Vispar-*.pacman`) |
 
 Both APKs are built on GitHub's runners by the **Android builds** workflow (`.github/workflows/android.yml`, no EAS account needed). They are signed with the standard debug key, so they install directly but are not meant for the Play Store. Install the TV APK from a USB drive or with `adb install`. For emulators and Chromebooks there are smaller `-x86_64` APKs (`Vispar-*-android-x86_64.apk`, `Vispar-*-android-tv-x86_64.apk`).
 

@@ -80,7 +80,7 @@ cp .env.example .env
 
 ## نسخه‌ی دسکتاپ (ویندوز، مک، لینوکس)
 
-پوشه‌ی `desktop/` اپ وب را در Electron می‌پیچد (nsis و portable برای ویندوز، dmg و zip برای مک، AppImage و deb برای لینوکس). ساخت از طریق GitHub Actions (`Desktop builds`) انجام می‌شود؛ با پوش کردن تگ `v*` فایل‌ها به Release اضافه می‌شوند. ساخت محلی:
+پوشه‌ی `desktop/` اپ وب را در Electron می‌پیچد (nsis و portable برای ویندوز، dmg و zip برای مک، AppImage، deb، rpm برای Fedora و pacman برای Arch در لینوکس). ساخت از طریق GitHub Actions (`Desktop builds`) انجام می‌شود؛ با پوش کردن تگ `v*` فایل‌ها به Release اضافه می‌شوند. ساخت محلی:
 
 ```bash
 npm run build:web
