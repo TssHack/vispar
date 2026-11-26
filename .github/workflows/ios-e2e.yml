@@ -1,6 +1,7 @@
 name: iOS simulator checks
 
-# Runs the app on an iPhone Simulator with Maestro (e2e/ios/*.yaml): first the latest released build,
+# Runs the app on an iPad Simulator (portrait: on a phone the player locks landscape, where
+# Maestro's taps and accessibility snapshot are unreliable) with Maestro (e2e/ios/*.yaml): first the latest released build,
 # to show the bug, then this commit's build, which must pass. Screenshots of both are uploaded.
 on:
   workflow_dispatch:
@@ -37,11 +38,11 @@ jobs:
           echo "released: $TAG"
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p '*ios-simulator.zip' -D apps
           mkdir -p apps/before && ditto -x -k apps/*ios-simulator.zip apps/before
-      - name: Install Maestro and boot an iPhone
+      - name: Install Maestro and boot an iPad
         run: |
           curl -fsSL https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
-          UDID=$(xcrun simctl list devices available -j | node -e 'const d=JSON.parse(require("fs").readFileSync(0)).devices;const all=Object.entries(d).filter(([k])=>/iOS/.test(k)).flatMap(([,v])=>v).filter(x=>/^iPhone/.test(x.name));console.log(all[all.length-1].udid)')
+          UDID=$(xcrun simctl list devices available -j | node -e 'const d=JSON.parse(require("fs").readFileSync(0)).devices;const all=Object.entries(d).filter(([k])=>/iOS/.test(k)).flatMap(([,v])=>v).filter(x=>/^iPad/.test(x.name));console.log(all[all.length-1].udid)')
           echo "UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b

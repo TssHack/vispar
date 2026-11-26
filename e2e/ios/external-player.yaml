@@ -19,10 +19,7 @@ appId: com.fazli.vispar
 - assertVisible: "جزئیات خطا کپی شد"
 - waitForAnimationToEnd:
     timeout: 5000
-# "پخش با پلیر دیگر" sits at 54%,75% on the error screen (landscape). It is tapped by position:
-# XCUITest leaves some buttons of this row out of its snapshot, though they are on screen.
-- tapOn:
-    point: "54%,75%"
+- tapOn: "پخش با پلیر دیگر"
 - waitForAnimationToEnd
 - takeScreenshot: 04-after-tap
 - assertVisible: "پخش با…"
