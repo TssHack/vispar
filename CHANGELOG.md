@@ -22,6 +22,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ### Fixed
 
+- **Resuming from "Continue watching" opened the end screen** ([#86](https://github.com/TssHack/vispar/issues/86)). The player opens before it knows the file, and the empty player reported "finished" at once. The "پایان" screen then covered the film and the resume prompt, and both of its buttons started from the beginning. Now the player offers to resume, and "ادامه" goes to the saved spot. On TV the prompt keeps the remote's focus and stays up for 15 seconds.
+- **Subtitles no longer drop lines in fast dialogue.** When a line started before the previous one ended, only the first was shown; a short reply inside a longer line never appeared. Overlapping lines now show together, and lines appear and disappear on their exact times instead of up to half a second late. A line of an MKV subtitle that failed to download is tried once more at the end, instead of staying missing for the whole film.
+- **Android TV: a mouse (air mouse) can seek.** Clicking or dragging the seek bar goes to that point; it used to only pause. A click on the video while the controls are hidden brings them back. The remote works as before.
+- **Android TV: the "play with…" sheet takes the remote's focus** when it opens.
 - **Linux: the app icon was missing in GNOME (and other desktops).** Only a 1024×1024 icon was installed, and the hicolor icon theme has no folder for that size. Every Linux package now installs 16 to 512 px icons, generated from the logo by `scripts/build-icons.js`.
   - The window icon file was never packaged, so the window and task switcher had no icon either. It is now inside the app.
   - The running window is now tied to its menu entry (`desktopName`, so `StartupWMClass` and the window class are both `vispar-desktop`). Checked on X11; GNOME on Wayland is checked by installing the package.
