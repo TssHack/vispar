@@ -14,6 +14,9 @@ jobs:
   simulator:
     runs-on: macos-latest
     timeout-minutes: 90
+    env:
+      # The XCTest driver sometimes takes minutes to start on a cold runner.
+      MAESTRO_DRIVER_STARTUP_TIMEOUT: '240000'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -59,7 +62,10 @@ jobs:
           xcrun simctl install "$UDID" apps/after/Vispar.app
           status=0
           for f in external-player; do
-            maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/after/$f" || { echo "AFTER $f: failed"; status=1; }
+            # One retry: a driver that fails to start is a runner problem, not the app's.
+            maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/after/$f" \
+              || maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/after/$f-retry" \
+              || { echo "AFTER $f: failed"; status=1; }
           done
           exit $status
       - if: always()
