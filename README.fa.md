@@ -99,6 +99,16 @@ cd desktop && npm install && npx electron-builder
 
 برای تغییرات فقط JS، به‌جای APK می‌توانید OTA بفرستید: یک‌بار `npx eas-cli init` و `npx eas-cli update:configure`، بعد `npx eas-cli update --channel production`.
 
+## آیفون و آی‌پد (SideStore و AltStore)
+
+فایل `Vispar-*-ios-unsigned.ipa` امضا نشده است؛ با SideStore، AltStore یا Sideloadly نصب می‌شود. برای آپدیت با یک دکمه، منبع ویسپار را یک بار اضافه کنید: در SideStore به **Sources** بروید، **+** را بزنید و این آدرس را وارد کنید:
+
+```
+https://github.com/TssHack/vispar/releases/latest/download/altstore-source.json
+```
+
+این آدرس همیشه به آخرین نسخه اشاره می‌کند و هر نسخه‌ی جدید در SideStore نشان داده می‌شود. فایل را `scripts/altstore-source.js` هنگام ساخت iOS از روی فایل ipa و CHANGELOG می‌سازد.
+
 ## Android TV
 
 ساخت نسخه‌ی تلویزیون از همین پروژه:

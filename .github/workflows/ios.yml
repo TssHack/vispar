@@ -89,6 +89,11 @@ jobs:
           echo "--- architectures"
           lipo -info "$SIM_APP/$(plutil -extract CFBundleExecutable raw "$SIM_APP/Info.plist")"
           lipo -info "$DEV_APP/$(plutil -extract CFBundleExecutable raw "$DEV_APP/Info.plist")"
+          # The SideStore / AltStore source, attached to the release with the .ipa. Its address is
+          # .../releases/latest/download/altstore-source.json, so it always describes the newest version.
+          node scripts/altstore-source.js "out/Vispar-${VERSION}-ios-unsigned.ipa" > out/altstore-source.json
+          node -e 'const s=require("./out/altstore-source.json");console.log("source:",s.apps[0].version,s.apps[0].size,"bytes")'
+
           echo "--- archive layout"
           unzip -l "out/Vispar-${VERSION}-ios-unsigned.ipa" | grep -E "Payload/Vispar.app/(Info.plist|main.jsbundle)"
           unzip -l "out/Vispar-${VERSION}-ios-simulator.zip" | grep -E "Vispar.app/(Info.plist|main.jsbundle)"

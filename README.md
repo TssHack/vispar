@@ -111,6 +111,9 @@ The **iOS builds** workflow (`.github/workflows/ios.yml`) produces two files on 
 
 - `Vispar-*-ios-simulator.zip`: the app for the iOS Simulator (arm64 and Intel). Unzip it and drag `Vispar.app` onto a running Simulator, or run `xcrun simctl install booted Vispar.app` and `xcrun simctl launch booted com.fazli.vispar`.
 - `Vispar-*-ios-unsigned.ipa`: iPhone and iPad build. **It is not signed**, because Apple only installs signed apps. Re-sign and install it with AltStore, Sideloadly (free Apple ID, valid 7 days) or your own certificate and provisioning profile. On Linux, see [docs/ios-install-linux.md](docs/ios-install-linux.md) (xtool). It is not a TestFlight or App Store build.
+- `altstore-source.json`: a **SideStore / AltStore source**. Add it once and SideStore shows each new version and updates Vispar with one tap. In SideStore: **Sources → +**, then paste
+  `https://github.com/TssHack/vispar/releases/latest/download/altstore-source.json`
+  (the address always points at the newest release). Written by `scripts/altstore-source.js` from the release's `.ipa` and CHANGELOG.
 
 The desktop builds are produced by the **Desktop builds** workflow (`.github/workflows/desktop.yml`). Push a `v*` tag and the installers are attached to the release automatically.
 
