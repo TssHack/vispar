@@ -14,11 +14,29 @@ import type { ExternalApp } from './apps';
 import { appIcon, appsFor, copyLink, detectInstalled, downloadPlaylist, downloadWithSystem, openInApp, openWithSystemPlayer, shareLink, openInBrowserTab, openWithAndroidChooser, webPlatform } from './launch';
 import { setSheetListener, type SheetRequest } from './sheet';
 
-function Row({ icon, image, title, subtitle, onPress, badge }: { icon?: IconName; image?: string | null; title: string; subtitle?: string; onPress: () => void; badge?: string }) {
+function Row({
+  icon,
+  image,
+  title,
+  subtitle,
+  onPress,
+  badge,
+  preferred,
+}: {
+  icon?: IconName;
+  image?: string | null;
+  title: string;
+  subtitle?: string;
+  onPress: () => void;
+  badge?: string;
+  /** TV: takes the remote's focus when the sheet opens. */
+  preferred?: boolean;
+}) {
   const { colors } = useTheme();
   return (
     <Focusable
       onPress={onPress}
+      hasTVPreferredFocus={preferred}
       accessibilityRole="button"
       accessibilityLabel={subtitle ? `${title}، ${subtitle}` : title}
       ringRadius={14}
@@ -129,11 +147,13 @@ export function ExternalSheetHost() {
           ) : null}
           <ScrollView contentContainerStyle={{ gap: 8 }}>
             {isPlayer && req.playInternal ? (
-              <Row icon="play" title="پلیر ویسپار" subtitle="پخش داخل برنامه" onPress={() => pick(req.playInternal!, 'internal')} />
+              <Row icon="play" title="پلیر ویسپار" subtitle="پخش داخل برنامه" onPress={() => pick(req.playInternal!, 'internal')} preferred={isTV} />
             ) : null}
-            {shown.map((app) => (
+            {shown.map((app, i) => (
               <Row
                 key={app.id}
+                // The remote's focus starts in the sheet, not on the screen behind it.
+                preferred={isTV && i === 0 && !(isPlayer && req.playInternal)}
                 image={icons[app.id]}
                 icon={isPlayer ? 'play' : 'download'}
                 title={app.name}

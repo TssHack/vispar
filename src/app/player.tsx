@@ -157,6 +157,7 @@ export default function PlayerScreen() {
     player
       .replaceAsync({ uri: playableUrl(upgraded || current.url), metadata: { title, artist: ctx.subtitle || undefined } })
       .then(() => {
+        setEnded(false);
         if (pendingSeek.current !== null) {
           player.currentTime = pendingSeek.current;
           pendingSeek.current = null;
@@ -256,9 +257,10 @@ export default function PlayerScreen() {
       toast(`ادامه از ${faClock(saved!.position)}`, 'history');
     } else {
       setResumeAt(saved!.position);
-      setTimeout(() => setResumeAt(null), 9000);
+      // Longer on TV: the remote has to reach the buttons first.
+      setTimeout(() => setResumeAt(null), isTV ? 15000 : 9000);
     }
-  }, [status, key, seekTo]);
+  }, [status, key, seekTo, isTV]);
 
   // ---------- progress saving ----------
   const lastSaved = useRef(0);
@@ -297,6 +299,9 @@ export default function PlayerScreen() {
     playInternal(src, ctx.next.ctx, true);
   }, [ctx.next]);
   useEventListener(player, 'playToEnd', () => {
+    // An empty player reports the end at once: "continue watching" opens the player before its URL is
+    // resolved, and the end screen then covered the film, its controls and the resume prompt (#86).
+    if (!loadedUrl.current || !player.duration) return;
     save();
     setEnded(true);
     if (ctx.next && autoplayNext) setCountdown(5);
@@ -370,6 +375,8 @@ export default function PlayerScreen() {
     // them here as well toggled twice, i.e. not at all. Pausing still shows the controls through the
     // `isPlaying` effect.
     if (k === 'playPause' || k === 'play' || k === 'pause') return;
+    // The resume prompt has the focus: its buttons take the keys, not playback.
+    if (resumeAt !== null) return;
     if (k === 'rewind') seekBy(-skip * 2);
     else if (k === 'fastForward') seekBy(skip * 2);
     else if (!visible && !menu && !ended) {
@@ -450,6 +457,8 @@ export default function PlayerScreen() {
           style={{ size: subtitleStyle, background: subtitleBackground }}
           bottomInset={bottom + 96}
           scale={isTV ? 1.35 : 1}
+          playing={isPlaying}
+          rate={playbackRate}
         />
       ) : null}
 
@@ -480,10 +489,13 @@ export default function PlayerScreen() {
         holds focus meanwhile, and the remote handler above does the rest. It has no onPress, so select
         is handled once, by the remote handler.
       */}
-      {isTV && !visible && !menu ? (
+      {isTV && !visible && !menu && resumeAt === null ? (
         <View
           focusable
           accessible={false}
+          // A TV mouse click must reach the tap surface below (it brings the controls back); focus and
+          // remote keys do not depend on touch handling.
+          pointerEvents="none"
           {...({ hasTVPreferredFocus: true } as object)}
           style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
         />
@@ -517,7 +529,7 @@ export default function PlayerScreen() {
               }}
               accessibilityRole="button"
               accessibilityLabel={isPlaying ? 'توقف' : 'پخش'}
-              hasTVPreferredFocus={isTV && entry === 'play'}
+              hasTVPreferredFocus={isTV && entry === 'play' && resumeAt === null}
               ringRadius={42}
               style={{ width: big ? 84 : 72, height: big ? 84 : 72, borderRadius: 42, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent }}
             >

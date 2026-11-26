@@ -175,6 +175,30 @@ describe('reading an embedded subtitle over range requests', () => {
   });
 });
 
+describe('a line lost to a failed request (#86)', () => {
+  it('is read again once the others are in, instead of missing for the whole film', async () => {
+    const lines: Line[] = [
+      { time: 1000, text: 'first', duration: 900 },
+      { time: 1800, text: 'quick reply', duration: 500 },
+      { time: 2200, text: 'third', duration: 900 },
+    ];
+    const file = buildMkv({ lines });
+    const ok = fetcherOf(file);
+    const index = await readMkvIndex(ok);
+    if (typeof index !== 'object') throw new Error(index);
+    const target = index.cues[3]![1]!;
+    const at = index.segmentStart + target.cluster + 5 + target.relative;
+    let failures = 0;
+    // The second line's first request fails (a stall while the video buffers), the next one works.
+    const flaky = async (a: number, b: number) => {
+      if (a === at && failures++ === 0) throw new Error('timeout');
+      return ok(a, b);
+    };
+    const cues = await readMkvTrack(flaky, index, index.tracks[0]!);
+    expect(cues.map((c) => c.lines[0])).toEqual(['first', 'quick reply', 'third']);
+  });
+});
+
 describe('blockText', () => {
   it('ignores a block of another track at the same position', () => {
     const block = new Uint8Array([0xa3, 0x88, 0x81, 0, 0, 0x80, 1, 2, 3, 4]);
