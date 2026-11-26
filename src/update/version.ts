@@ -2,7 +2,7 @@ import type { GithubRelease, ReleaseAsset } from '@/api/types';
 
 import { LINUX_EXT, type LinuxPackage } from './linuxPackage';
 
-export type ReleaseTarget = 'android' | 'windows' | 'mac' | 'linux';
+export type ReleaseTarget = 'android' | 'ios' | 'windows' | 'mac' | 'linux';
 
 /** "v2.1.0", "2.1", "release-2.1.0-beta" → [2, 1, 0]. Returns null when no number is found. */
 export function parseVersion(input: string | null | undefined): number[] | null {
@@ -57,6 +57,9 @@ export function pickAsset(
         list.find((a) => has(a, '.apk') && !/x86/i.test(a.name)) ??
         null
       );
+    case 'ios':
+      // The device build; the Simulator zip cannot be installed on an iPhone.
+      return list.find((a) => has(a, '.ipa')) ?? null;
     case 'windows':
       return list.find((a) => has(a, '.exe') && !/portable/i.test(a.name)) ?? list.find((a) => has(a, '.exe')) ?? null;
     case 'mac':

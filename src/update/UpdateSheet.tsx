@@ -124,6 +124,13 @@ export function UpdateSheet() {
               onPress={install}
               hasTVPreferredFocus
             />
+            {target === 'ios' && asset ? (
+              <View style={{ borderRadius: 14, backgroundColor: colors.surface2, padding: 12, gap: 4 }}>
+                <Text size={12} color="muted">
+                  فایل ‎.ipa در برنامه‌ی Files ذخیره می‌شود. آن را مثل نسخه‌ی قبلی با AltStore، SideStore یا Sideloadly نصب کنید؛ تاریخچه و کتابخانه‌ی شما می‌ماند.
+                </Text>
+              </View>
+            ) : null}
             {assetKind && asset ? (
               <View style={{ borderRadius: 14, backgroundColor: colors.surface2, padding: 12, gap: 4 }}>
                 <Text size={12} color="muted">
