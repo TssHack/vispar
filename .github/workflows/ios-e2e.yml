@@ -2,7 +2,7 @@ name: iOS simulator checks
 
 # Runs the app on an iPad Simulator (portrait: on a phone the player locks landscape, where
 # Maestro's taps and accessibility snapshot are unreliable) with Maestro (e2e/ios/*.yaml): first the latest released build,
-# to show the bug, then this commit's build, which must pass. Screenshots of both are uploaded.
+# for comparison, then this commit's build, which must pass. Screenshots of both are uploaded.
 on:
   workflow_dispatch:
   push:
@@ -46,7 +46,7 @@ jobs:
           echo "UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
-      - name: Released build (expected to show the bug)
+      - name: Latest released build (for comparison; may fail)
         continue-on-error: true
         run: |
           xcrun simctl install "$UDID" apps/before/Vispar.app
@@ -61,8 +61,6 @@ jobs:
           for f in external-player; do
             maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/after/$f" || { echo "AFTER $f: failed"; status=1; }
           done
-          # Screenshots only: not a pass/fail check.
-          maestro --device "$UDID" test e2e/ios/explore.yaml --test-output-dir shots/after/explore || echo "explore: stopped early"
           exit $status
       - if: always()
         uses: actions/upload-artifact@v7
