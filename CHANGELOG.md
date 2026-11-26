@@ -4,6 +4,8 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-11-26
+
 ### Fixed
 
 - **iPhone and iPad: "play with another player" works inside the player** ([#91](https://github.com/TssHack/vispar/issues/91)). When the built-in player could not play a file, the list of players only appeared after going back to the episodes page. The player was a separate iOS window, and nothing could be shown on top of it. For the same reason, messages raised in the player never appeared on iPhone: "لینک کپی شد", "ادامه از …", "بارگذاری ویدیو ممکن نشد". The player is now an ordinary full-screen page, and both show on top of it. Checked on an iPad Simulator, before and after.
