@@ -92,7 +92,12 @@ export function SeekBar({ position, duration, buffered, accent, onSeek, onScrubb
           onPress={onSelect}
           style={{ height: 28, justifyContent: 'center' }}
         >
-          <View {...pointer} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
+          <View
+            {...pointer}
+            // Web (?tv=1, desktop): the click would also bubble to the focus stop and toggle play.
+            {...(Platform.OS === 'web' ? ({ onClick: (e: { stopPropagation: () => void }) => e.stopPropagation() } as object) : {})}
+            style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
+          />
           <View pointerEvents="none" style={{ height: focused || drag !== null ? 8 : 4, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
             <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${buf * 100}%`, backgroundColor: 'rgba(255,255,255,0.35)' }} />
             <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${shown * 100}%`, backgroundColor: accent }} />
