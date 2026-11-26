@@ -4,6 +4,10 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Fixed
+
+- **iPhone: new versions are announced again** ([#89](https://github.com/TssHack/vispar/issues/89)). The iOS app never checked for updates, and "check for updates" always said it was up to date. It now checks the releases like Android does. It offers the new `.ipa` and says to install it with AltStore, SideStore or Sideloadly, as before. Safari and the home-screen web app are unchanged: they always run the latest version.
+
 ## [2.5.0] - 2026-11-26
 
 ### Added
