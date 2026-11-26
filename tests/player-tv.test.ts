@@ -26,7 +26,7 @@ describe('continue watching does not open the end screen (#86)', () => {
 describe('a TV mouse can seek and bring the controls back (#86)', () => {
   it('handles press and drag inside the TV seek bar', () => {
     const tv = seekBar.slice(seekBar.indexOf('{tv ? ('), seekBar.indexOf(') : ('));
-    expect(tv).toContain('<View {...pointer}');
+    expect(tv).toMatch(/<View\s+\{\.\.\.pointer\}/);
     expect(seekBar).toMatch(/onResponderRelease:[\s\S]*onSeek\(r \* duration\)/);
   });
 
