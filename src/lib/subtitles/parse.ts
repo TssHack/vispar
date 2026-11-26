@@ -129,31 +129,66 @@ export function parseSubtitles(input: string): Cue[] {
 /** Alias kept for call sites that read better as "parse this SRT"; both formats are handled. */
 export const parseSrt = parseSubtitles;
 
-/**
- * The cue covering `time`, or null in a gap.
- *
- * Binary search, because this runs on every player tick: a linear scan over a few thousand cues
- * would be the most expensive thing in the render loop.
- */
-export function cueAt(cues: Cue[], time: number): Cue | null {
+/** Longest cue of a list, cached per array: bounds how far back an active cue can start. */
+const longestCue = new WeakMap<Cue[], number>();
+function longest(cues: Cue[]): number {
+  let max = longestCue.get(cues);
+  if (max === undefined) {
+    max = 0;
+    for (const c of cues) if (c.end - c.start > max) max = c.end - c.start;
+    longestCue.set(cues, max);
+  }
+  return max;
+}
+
+/** Index of the last cue that starts at or before `time` (-1 when none does). */
+function lastStartingBy(cues: Cue[], time: number): number {
   let low = 0;
   let high = cues.length - 1;
-  let found: Cue | null = null;
-
+  let found = -1;
   while (low <= high) {
     const mid = (low + high) >> 1;
-    const cue = cues[mid]!;
-    if (time < cue.start) {
-      high = mid - 1;
-    } else if (time >= cue.end) {
+    if (cues[mid]!.start <= time) {
+      found = mid;
       low = mid + 1;
-    } else {
-      found = cue;
-      // Keep searching left: overlapping cues are common, and the earliest one should win.
-      high = mid - 1;
-    }
+    } else high = mid - 1;
   }
   return found;
+}
+
+/**
+ * Every cue covering `time`, earliest first; empty in a gap.
+ *
+ * Fast dialogue overlaps: the next line often starts before the previous one ends. Returning only
+ * one cue hid the later line until the earlier one ended, and a later line that ended first was
+ * never shown at all (#86). Cues are sorted by start, but their ends are not, so the search finds
+ * the last cue that has started and walks back only as far as the longest cue could reach.
+ */
+export function cuesAt(cues: Cue[], time: number): Cue[] {
+  const last = lastStartingBy(cues, time);
+  if (last < 0) return [];
+  const reach = time - longest(cues);
+  const out: Cue[] = [];
+  for (let i = last; i >= 0 && cues[i]!.start >= reach; i--) if (time < cues[i]!.end) out.push(cues[i]!);
+  return out.reverse();
+}
+
+/** The earliest cue covering `time`, or null in a gap. */
+export function cueAt(cues: Cue[], time: number): Cue | null {
+  return cuesAt(cues, time)[0] ?? null;
+}
+
+/**
+ * The first moment after `time` at which the set of visible cues changes (a cue starts or ends), or
+ * null when nothing changes any more. The overlay schedules itself on it instead of waiting for the
+ * player's next 0.5 s tick, so lines appear and disappear on time.
+ */
+export function nextCueChange(cues: Cue[], time: number): number | null {
+  const last = lastStartingBy(cues, time);
+  let next = last + 1 < cues.length ? cues[last + 1]!.start : Infinity;
+  const reach = time - longest(cues);
+  for (let i = last; i >= 0 && cues[i]!.start >= reach; i--) if (cues[i]!.end > time && cues[i]!.end < next) next = cues[i]!.end;
+  return Number.isFinite(next) ? next : null;
 }
 
 /** Shifts every cue, for the "subtitles are early" case. Keeps order without re-sorting. */

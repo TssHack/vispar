@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { Text } from '@/components/Text';
-import { cueAt, type Cue } from '@/lib/subtitles/parse';
+import { cuesAt, nextCueChange, type Cue } from '@/lib/subtitles/parse';
 
 /**
  * Renders the active cue over the video.
@@ -37,13 +37,44 @@ type Props = {
   bottomInset: number;
   /** Scales text for TV, where 18px is unreadable from a sofa. */
   scale?: number;
+  /** While playing, the overlay runs its own clock between the player's 0.5 s ticks. */
+  playing?: boolean;
+  rate?: number;
 };
 
-export function SubtitleOverlay({ cues, time, offsetMs, style, bottomInset, scale = 1 }: Props) {
-  // The cue lookup is a binary search and the offset is cheap, but both must stay out of the way of
-  // the 2 Hz player tick, hence the memo on the inputs that actually change.
-  const cue = useMemo(() => cueAt(cues, time - offsetMs / 1000), [cues, time, offsetMs]);
-  if (!cue) return null;
+/** How far past the last player tick the overlay's own clock may run (it stops if ticks stop, e.g. buffering). */
+const MAX_EXTRAPOLATION = 1.5;
+
+/**
+ * The playback position between player ticks. `timeUpdate` arrives every 0.5 s, so a line could
+ * appear up to half a second late, and a short line in fast dialogue could be skipped (#86). This
+ * re-renders exactly when the next cue starts or ends, from the last tick and the playback rate.
+ */
+export function useCueClock(cues: Cue[], time: number, playing: boolean, rate: number): number {
+  const tickAt = useRef({ time, at: Date.now() });
+  if (tickAt.current.time !== time) tickAt.current = { time, at: Date.now() };
+  // The extrapolated position belongs to one tick; a new tick replaces it.
+  const [ahead, setAhead] = useState<{ tick: number; now: number } | null>(null);
+  const now = ahead && ahead.tick === time ? ahead.now : time;
+  useEffect(() => {
+    if (!playing || rate <= 0) return;
+    const next = nextCueChange(cues, now);
+    if (next === null || next - time > MAX_EXTRAPOLATION) return;
+    const wait = Math.max(0, ((next - now) / rate) * 1000) + 10;
+    const timer = setTimeout(() => {
+      const elapsed = ((Date.now() - tickAt.current.at) / 1000) * rate;
+      setAhead({ tick: time, now: time + Math.min(elapsed, MAX_EXTRAPOLATION) });
+    }, wait);
+    return () => clearTimeout(timer);
+  }, [cues, now, time, playing, rate]);
+  return now;
+}
+
+export function SubtitleOverlay({ cues, time, offsetMs, style, bottomInset, scale = 1, playing = false, rate = 1 }: Props) {
+  const clock = useCueClock(cues, time - offsetMs / 1000, playing, rate);
+  // Overlapping cues (fast dialogue) are all shown, earliest on top.
+  const lines = cuesAt(cues, clock).flatMap((c) => c.lines);
+  if (!lines.length) return null;
 
   const fontSize = Math.round(FONT_SIZE[style.size] * scale);
   const padding = Math.round(PADDING[style.background] * scale);
@@ -71,7 +102,7 @@ export function SubtitleOverlay({ cues, time, offsetMs, style, bottomInset, scal
           paddingVertical: padding ? Math.round(padding * 1.1) : 0,
         }}
       >
-        {cue.lines.map((line, index) => (
+        {lines.map((line, index) => (
           <Text
             key={index}
             // Persian text needs the right base direction; mixed Latin words inside a cue then keep

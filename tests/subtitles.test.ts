@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { cueAt, detectFormat, parseSubtitles, shiftCues, subtitleHint, parseSrt } from '@/lib/subtitles/parse';
+import { cueAt, cuesAt, detectFormat, nextCueChange, parseSubtitles, shiftCues, subtitleHint, parseSrt } from '@/lib/subtitles/parse';
 import { sidecarCandidates } from '@/lib/subtitles/load';
 import { migrateSettings } from '@/settings/store';
 
@@ -114,6 +114,42 @@ describe('cue lookup', () => {
     const started = performance.now();
     for (let i = 0; i < 5000; i++) cueAt(parsed, (i * 7) % 4000);
     expect(performance.now() - started).toBeLessThan(500);
+  });
+});
+
+describe('fast dialogue: overlapping cues (#86)', () => {
+  const cue = (start: number, end: number, text: string) => ({ start, end, lines: [text] });
+  // A long line, then two quick replies that start before it ends; the second reply ends first.
+  const cues = [cue(10, 14, 'long'), cue(11, 13, 'reply one'), cue(12, 12.6, 'reply two'), cue(15, 16, 'later')];
+
+  it('shows every line that is active, earliest first', () => {
+    expect(cuesAt(cues, 10.5).map((c) => c.lines[0])).toEqual(['long']);
+    expect(cuesAt(cues, 11.5).map((c) => c.lines[0])).toEqual(['long', 'reply one']);
+    expect(cuesAt(cues, 12.3).map((c) => c.lines[0])).toEqual(['long', 'reply one', 'reply two']);
+    expect(cuesAt(cues, 13.5).map((c) => c.lines[0])).toEqual(['long']);
+    expect(cuesAt(cues, 14.5)).toEqual([]);
+  });
+
+  it('never loses a short line hidden inside a longer one (the old lookup returned only "long")', () => {
+    const shown = new Set<string>();
+    for (let t = 9; t < 17; t += 0.1) for (const c of cuesAt(cues, t)) shown.add(c.lines[0]!);
+    expect([...shown].sort()).toEqual(['later', 'long', 'reply one', 'reply two']);
+  });
+
+  it('is right when end times are not in order (a long line before many short ones)', () => {
+    const list = [cue(0, 100, 'narration'), ...Array.from({ length: 50 }, (_, i) => cue(1 + i, 1.5 + i, `l${i}`))];
+    expect(cuesAt(list, 30.2).map((c) => c.lines[0])).toEqual(['narration', 'l29']);
+    expect(cuesAt(list, 30.7).map((c) => c.lines[0])).toEqual(['narration']);
+    expect(cueAt(list, 30.7)?.lines[0]).toBe('narration');
+  });
+
+  it('knows the next moment the picture changes, so the overlay does not wait for the 0.5 s tick', () => {
+    expect(nextCueChange(cues, 9)).toBe(10);
+    expect(nextCueChange(cues, 10.2)).toBe(11);
+    expect(nextCueChange(cues, 12.1)).toBe(12.6);
+    expect(nextCueChange(cues, 12.7)).toBe(13);
+    expect(nextCueChange(cues, 14.2)).toBe(15);
+    expect(nextCueChange(cues, 16)).toBeNull();
   });
 });
 
