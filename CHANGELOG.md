@@ -6,6 +6,8 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ### Fixed
 
+- **iPhone and iPad: "play with another player" works inside the player** ([#91](https://github.com/TssHack/vispar/issues/91)). When the built-in player could not play a file, the list of players only appeared after going back to the episodes page. The player was a separate iOS window, and nothing could be shown on top of it. For the same reason, messages raised in the player never appeared on iPhone: "لینک کپی شد", "ادامه از …", "بارگذاری ویدیو ممکن نشد". The player is now an ordinary full-screen page, and both show on top of it. Checked on an iPad Simulator, before and after.
+- **iPhone: text no longer runs under the clock and battery** on the film and series pages once you scroll; the status bar gets a background there.
 - **iPhone: new versions are announced again** ([#89](https://github.com/TssHack/vispar/issues/89)). The iOS app never checked for updates, and "check for updates" always said it was up to date. It now checks the releases like Android does. It offers the new `.ipa` and says to install it with AltStore, SideStore or Sideloadly, as before. Safari and the home-screen web app are unchanged: they always run the latest version.
 
 ## [2.5.0] - 2026-11-26

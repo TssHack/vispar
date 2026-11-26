@@ -5,6 +5,7 @@ import { posterPageMeta, usePageMeta } from '@/lib/pageMeta';
 import { usePoster } from '@/api/hooks';
 import { Button } from '@/components/Button';
 import { DetailHeader } from '@/components/DetailHeader';
+import { useStatusScrim } from '@/components/StatusScrim';
 import { NotFound } from '@/components/NotFound';
 import { SourceList } from '@/components/SourceList';
 import { Text } from '@/components/Text';
@@ -36,6 +37,8 @@ function Spec({ label, value }: { label: string; value: string }) {
 export default function MovieScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  // Text must not run under the status bar once the backdrop has scrolled away (#91).
+  const scrim = useStatusScrim();
   const { isTV, width } = useLayout();
   // On narrow phones the quick download icon would squeeze the play label; every source row has its own download button.
   const compact = width < 400;
@@ -60,7 +63,8 @@ export default function MovieScreen() {
   const resumable = canResume(saved);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: 48 }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={scrim.onScroll} scrollEventThrottle={32}>
       <DetailHeader
         poster={movie}
         actions={
@@ -103,5 +107,7 @@ export default function MovieScreen() {
         </View>
       </DetailHeader>
     </ScrollView>
+      {scrim.view}
+    </View>
   );
 }
