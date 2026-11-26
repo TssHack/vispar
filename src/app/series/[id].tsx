@@ -8,6 +8,7 @@ import type { Episode } from '@/api/types';
 import { Art } from '@/components/Art';
 import { Button } from '@/components/Button';
 import { DetailHeader } from '@/components/DetailHeader';
+import { useStatusScrim } from '@/components/StatusScrim';
 import { Focusable } from '@/components/Focusable';
 import { Icon } from '@/components/Icon';
 import { NotFound } from '@/components/NotFound';
@@ -27,6 +28,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 export default function SeriesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  // Text must not run under the status bar once the backdrop has scrolled away (#91).
+  const scrim = useStatusScrim();
   const { isTV, isWide, width, gutter } = useLayout();
   const seriesId = Number(id);
   const q = usePoster('serie', seriesId);
@@ -83,7 +86,8 @@ export default function SeriesScreen() {
   const epWidth = twoCols ? Math.min(560, (Math.min(width, 1440) - gutter * 2 - 16) / 2) : undefined;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: 48 }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={scrim.onScroll} scrollEventThrottle={32}>
       <DetailHeader
         poster={show}
         extraMeta={extraMeta}
@@ -215,5 +219,7 @@ export default function SeriesScreen() {
         ctx={picked ? ctxFor(picked.s, picked.e) : ctxFor(0, 0)}
       />
     </ScrollView>
+      {scrim.view}
+    </View>
   );
 }

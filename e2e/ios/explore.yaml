@@ -7,7 +7,8 @@ appId: com.fazli.vispar
 - takeScreenshot: 10-movie-page
 - scroll
 - takeScreenshot: 11-movie-page-scrolled
-- back
+- tapOn: "بازگشت"
+- waitForAnimationToEnd
 - tapOn: "سریال"
 - waitForAnimationToEnd
 - takeScreenshot: 12-series-tab

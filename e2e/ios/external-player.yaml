@@ -1,4 +1,4 @@
-# #91: a file the player cannot open → "play with another player" must show the sheet over the player.
+# #91: on the player's error screen, a toast and the "play with…" sheet must show over the player.
 appId: com.fazli.vispar
 ---
 - runFlow: start.yaml
@@ -10,10 +10,19 @@ appId: com.fazli.vispar
     commands:
       - tapOn: "Open"
 - extendedWaitUntil:
-    visible: "پخش با پلیر دیگر"
+    visible: "کپی جزئیات خطا"
     timeout: 90000
 - takeScreenshot: 02-player-error
-- tapOn: "پخش با پلیر دیگر"
+# A toast raised inside the player.
+- tapOn: "کپی جزئیات خطا"
+- takeScreenshot: 03-toast
+- assertVisible: "جزئیات خطا کپی شد"
+- waitForAnimationToEnd:
+    timeout: 5000
+# "پخش با پلیر دیگر" sits at 54%,75% on the error screen (landscape). It is tapped by position:
+# XCUITest leaves some buttons of this row out of its snapshot, though they are on screen.
+- tapOn:
+    point: "54%,75%"
 - waitForAnimationToEnd
-- takeScreenshot: 03-after-tap
+- takeScreenshot: 04-after-tap
 - assertVisible: "پخش با…"
