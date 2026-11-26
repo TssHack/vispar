@@ -1,0 +1,43 @@
+# Screenshots of the main screens on iPhone, to look for layout and behaviour problems.
+appId: com.fazli.vispar
+---
+- runFlow: start.yaml
+- tapOn: "جزئیات"
+- waitForAnimationToEnd
+- takeScreenshot: 10-movie-page
+- scroll
+- takeScreenshot: 11-movie-page-scrolled
+- back
+- tapOn: "سریال"
+- waitForAnimationToEnd
+- takeScreenshot: 12-series-tab
+- tapOn: "جستجو"
+- waitForAnimationToEnd
+- takeScreenshot: 13-search
+- tapOn: "کتابخانه"
+- takeScreenshot: 14-library
+- openLink: "vispar://player?url=https%3A%2F%2Fcommondatastorage.googleapis.com%2Fgtv-videos-bucket%2Fsample%2FBigBuckBunny.mp4&q=720p&title=Test&type=movie&id=36180"
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: "گزینه‌های بیشتر"
+    timeout: 60000
+- takeScreenshot: 20-player
+- swipe:
+    direction: UP
+- takeScreenshot: 21-player-later
+- tapOn:
+    point: "50%,50%"
+- takeScreenshot: 22-player-tap
+- tapOn: "زیرنویس"
+- takeScreenshot: 23-player-subtitles-menu
+- tapOn:
+    point: "50%,20%"
+- tapOn: "کیفیت"
+- takeScreenshot: 24-player-quality-menu
+- tapOn: "بستن پخش"
+- waitForAnimationToEnd
+- takeScreenshot: 25-after-player

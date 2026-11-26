@@ -60,6 +60,8 @@ jobs:
           for f in external-player toast; do
             maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/after/$f" || { echo "AFTER $f: failed"; status=1; }
           done
+          # Screenshots only: not a pass/fail check.
+          maestro --device "$UDID" test e2e/ios/explore.yaml --test-output-dir shots/after/explore || echo "explore: stopped early"
           exit $status
       - if: always()
         uses: actions/upload-artifact@v7
