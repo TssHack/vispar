@@ -42,6 +42,35 @@ export function SeekBar({ position, duration, buffered, accent, onSeek, onScrubb
 
   const at = (e: GestureResponderEvent) => ratio(e.nativeEvent.locationX);
 
+  /**
+   * Press-and-drag seeking. Touch, a mouse and a TV air mouse all arrive here; on TV the bar is also a
+   * focus stop for the remote, and these handlers sit inside it, so a click seeks to the point
+   * instead of pressing the focus stop (which toggles play, as the remote's select does) (#86).
+   */
+  const pointer = {
+    onLayout: (e: LayoutChangeEvent) => {
+      width.current = e.nativeEvent.layout.width;
+    },
+    onStartShouldSetResponder: () => true,
+    onMoveShouldSetResponder: () => true,
+    onResponderTerminationRequest: () => false,
+    onResponderGrant: (e: GestureResponderEvent) => {
+      onScrubbing?.(true);
+      setDrag(at(e));
+    },
+    onResponderMove: (e: GestureResponderEvent) => setDrag(at(e)),
+    onResponderRelease: (e: GestureResponderEvent) => {
+      const r = at(e);
+      setDrag(null);
+      onScrubbing?.(false);
+      if (duration) onSeek(r * duration);
+    },
+    onResponderTerminate: () => {
+      setDrag(null);
+      onScrubbing?.(false);
+    },
+  };
+
   return (
     <View style={{ direction: 'ltr', gap: 6 }}>
       {tv ? (
@@ -63,7 +92,8 @@ export function SeekBar({ position, duration, buffered, accent, onSeek, onScrubb
           onPress={onSelect}
           style={{ height: 28, justifyContent: 'center' }}
         >
-          <View style={{ height: focused ? 8 : 4, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
+          <View {...pointer} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
+          <View pointerEvents="none" style={{ height: focused || drag !== null ? 8 : 4, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
             <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${buf * 100}%`, backgroundColor: 'rgba(255,255,255,0.35)' }} />
             <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${shown * 100}%`, backgroundColor: accent }} />
           </View>
@@ -84,28 +114,12 @@ export function SeekBar({ position, duration, buffered, accent, onSeek, onScrubb
         </Pressable>
       ) : (
       <View
-        onLayout={(e: LayoutChangeEvent) => {
-          width.current = e.nativeEvent.layout.width;
-        }}
+        {...pointer}
         accessibilityRole="adjustable"
         accessibilityLabel="نوار پیشرفت"
         accessibilityValue={{ min: 0, max: Math.round(duration), now: Math.round(position), text: `${faClock(position)} از ${faClock(duration)}` }}
         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
         onAccessibilityAction={(e) => onSeek(position + (e.nativeEvent.actionName === 'increment' ? 10 : -10))}
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onResponderTerminationRequest={() => false}
-        onResponderGrant={(e) => {
-          onScrubbing?.(true);
-          setDrag(at(e));
-        }}
-        onResponderMove={(e) => setDrag(at(e))}
-        onResponderRelease={(e) => {
-          const r = at(e);
-          setDrag(null);
-          onScrubbing?.(false);
-          if (duration) onSeek(r * duration);
-        }}
         style={{ height: 28, justifyContent: 'center' }}
       >
         <View style={{ height: drag !== null ? 6 : 4, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>

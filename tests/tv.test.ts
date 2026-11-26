@@ -153,6 +153,6 @@ describe('FlatList screens are not blank on TV (#52)', () => {
 describe('the remote reaches the player while the controls are hidden (#53)', () => {
   it('keeps a focusable view focused, because Android sends keys only down the focused path', () => {
     const src = readFileSync('src/app/player.tsx', 'utf8');
-    expect(src).toMatch(/isTV && !visible && !menu \? \(\s*<View\s+focusable/);
+    expect(src).toMatch(/isTV && !visible && !menu && resumeAt === null \? \(\s*<View\s+focusable/);
   });
 });
