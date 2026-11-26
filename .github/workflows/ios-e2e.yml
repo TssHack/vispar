@@ -1,0 +1,68 @@
+name: iOS simulator checks
+
+# Runs the app on an iPhone Simulator with Maestro (e2e/ios/*.yaml): first the latest released build,
+# to show the bug, then this commit's build, which must pass. Screenshots of both are uploaded.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['fix/ios-**']
+  pull_request:
+    paths: ['e2e/ios/**', '.github/workflows/ios-e2e.yml']
+
+jobs:
+  simulator:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx expo prebuild --platform ios --clean
+      - name: Build for the Simulator
+        run: |
+          set -o pipefail
+          WS=$(ls -d ios/*.xcworkspace | head -1)
+          xcodebuild -workspace "$WS" -scheme "$(basename "$WS" .xcworkspace)" -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO build | tail -n 20
+          mkdir -p apps/after && cp -R "$(find build/sim/Build/Products/Release-iphonesimulator -maxdepth 1 -name '*.app' | head -1)" apps/after/Vispar.app
+      - name: Latest released build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)
+          echo "released: $TAG"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p '*ios-simulator.zip' -D apps
+          mkdir -p apps/before && ditto -x -k apps/*ios-simulator.zip apps/before
+      - name: Install Maestro and boot an iPhone
+        run: |
+          curl -fsSL https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          UDID=$(xcrun simctl list devices available -j | node -e 'const d=JSON.parse(require("fs").readFileSync(0)).devices;const all=Object.entries(d).filter(([k])=>/iOS/.test(k)).flatMap(([,v])=>v).filter(x=>/^iPhone/.test(x.name));console.log(all[all.length-1].udid)')
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+      - name: Released build (expected to show the bug)
+        continue-on-error: true
+        run: |
+          xcrun simctl install "$UDID" apps/before/Vispar.app
+          for f in external-player toast; do
+            maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/before/$f" || echo "BEFORE $f: failed"
+          done
+          xcrun simctl uninstall "$UDID" com.fazli.vispar
+      - name: This build (must pass)
+        run: |
+          xcrun simctl install "$UDID" apps/after/Vispar.app
+          status=0
+          for f in external-player toast; do
+            maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/after/$f" || { echo "AFTER $f: failed"; status=1; }
+          done
+          exit $status
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-simulator-screens
+          path: shots/

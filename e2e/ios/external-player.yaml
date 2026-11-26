@@ -1,0 +1,13 @@
+# #91: a file the player cannot open → "play with another player" must show the sheet over the player.
+appId: com.fazli.vispar
+---
+- runFlow: start.yaml
+- openLink: "vispar://player?url=http%3A%2F%2F127.0.0.1%3A9%2Fnone.mp4&q=720p&title=Test&type=movie&id=36180"
+- extendedWaitUntil:
+    visible: "پخش با پلیر دیگر"
+    timeout: 90000
+- takeScreenshot: 02-player-error
+- tapOn: "پخش با پلیر دیگر"
+- waitForAnimationToEnd
+- takeScreenshot: 03-after-tap
+- assertVisible: "پخش با…"

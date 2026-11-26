@@ -1,0 +1,15 @@
+# Opens the app past the boot screen (the API may be unreachable from the runner).
+appId: com.fazli.vispar
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      text: "خانه|ادامه بدون اتصال"
+    timeout: 90000
+- runFlow:
+    when:
+      visible: "ادامه بدون اتصال"
+    commands:
+      - tapOn: "ادامه بدون اتصال"
+- takeScreenshot: 01-home

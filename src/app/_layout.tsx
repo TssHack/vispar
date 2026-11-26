@@ -105,7 +105,17 @@ function Shell() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="movie/[id]" />
         <Stack.Screen name="series/[id]" />
-        <Stack.Screen name="player" options={{ animation: 'fade', presentation: 'fullScreenModal' }} />
+        {/*
+          iOS: not a native modal. Everything the app shows on top of a screen lives in this root view
+          (the "play with…" sheet, toasts, the update sheet), and iOS cannot present a sheet while a
+          modal is up, nor draw root views over it: the sheet only appeared after leaving the player,
+          and the player's toasts never showed (#91). A plain full-screen push behaves the same for
+          the user. Android and the web never made it a separate window anyway.
+        */}
+        <Stack.Screen
+          name="player"
+          options={{ animation: 'fade', presentation: Platform.OS === 'ios' ? 'card' : 'fullScreenModal', gestureEnabled: Platform.OS !== 'ios' }}
+        />
       </Stack>
       <OfflineBanner status={net} onRetry={() => void checkConnection()} />
       <InstallPrompt />
