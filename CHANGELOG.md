@@ -4,6 +4,8 @@ All notable changes to Vispar. The format follows [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-11-26
+
 ### Added
 
 - **Linux: `.rpm` for Fedora and `.pacman` for Arch** in every release, next to the AppImage and `.deb`. Install with `sudo dnf install ./Vispar-*.rpm` or `sudo pacman -U Vispar-*.pacman`.
