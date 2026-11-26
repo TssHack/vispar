@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SystemUI from 'expo-system-ui';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { Appearance, Platform, useColorScheme } from 'react-native';
 
 import { setDigitStyle } from '@/lib/format';
 import { settingsStore } from '@/settings/store';
@@ -58,6 +58,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.bg).catch(() => {});
   }, [colors.bg]);
+
+  // iOS draws the status bar, sheets and the keyboard from the system's light/dark mode, not from the
+  // app. With the phone in dark mode and the app set to light, the clock and battery were white on a
+  // light page (seen on an iPhone with iOS 27), and StatusBar's style no longer overrides that. So
+  // the app tells iOS which mode it is in; "system" hands it back. Not on Android, where an override
+  // can recreate the activity.
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    Appearance.setColorScheme(preference === 'system' ? 'unspecified' : preference);
+  }, [preference]);
 
   const value = useMemo(
     () => ({ preference, setPreference, name, colors, ready, digits }),

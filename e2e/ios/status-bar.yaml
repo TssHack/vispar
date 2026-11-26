@@ -1,0 +1,17 @@
+# The Simulator is in dark mode; the app is set to light. The clock and battery must be dark, not
+# white on the light page (seen on an iPhone with iOS 27). Checked from the screenshot.
+appId: com.fazli.vispar
+---
+- runFlow: start.yaml
+- openLink: "vispar://settings"
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: "روشن"
+    timeout: 30000
+- tapOn: "روشن"
+- waitForAnimationToEnd
+- takeScreenshot: 30-light-theme-dark-system

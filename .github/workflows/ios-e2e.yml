@@ -49,11 +49,13 @@ jobs:
           echo "UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
+          # Dark system with the app in light (status-bar.yaml) is the case that hid the status bar.
+          xcrun simctl ui "$UDID" appearance dark
       - name: Latest released build (for comparison; may fail)
         continue-on-error: true
         run: |
           xcrun simctl install "$UDID" apps/before/Vispar.app
-          for f in external-player; do
+          for f in external-player status-bar; do
             maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/before/$f" || echo "BEFORE $f: failed"
           done
           xcrun simctl uninstall "$UDID" com.fazli.vispar
@@ -61,7 +63,7 @@ jobs:
         run: |
           xcrun simctl install "$UDID" apps/after/Vispar.app
           status=0
-          for f in external-player; do
+          for f in external-player status-bar; do
             # One retry: a driver that fails to start is a runner problem, not the app's.
             maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/after/$f" \
               || maestro --device "$UDID" test "e2e/ios/$f.yaml" --test-output-dir "shots/after/$f-retry" \
