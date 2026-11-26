@@ -1,6 +1,6 @@
 {
   "name": "vispar-desktop",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "private": true,
   "description": "Vispar desktop app (Windows, macOS, Linux)",
   "desktopName": "vispar-desktop.desktop",
