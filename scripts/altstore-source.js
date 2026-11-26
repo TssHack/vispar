@@ -23,6 +23,7 @@ function changelogNotes(changelog, version) {
   const end = rest.findIndex((l) => /^## \[/.test(l));
   return (end < 0 ? rest : rest.slice(0, end))
     .join('\n')
+    .replace(/^#{3,}\s*(.+)$/gm, '$1:')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/`([^`]+)`/g, '$1')

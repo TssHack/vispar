@@ -37,6 +37,8 @@ describe('SideStore / AltStore source', () => {
     const notes = changelogNotes(readFileSync('CHANGELOG.md', 'utf8'), '2.5.1');
     expect(notes).toContain('iPhone and iPad: "play with another player" works inside the player');
     expect(notes).not.toContain('**');
+    expect(notes).not.toContain('###');
+    expect(notes.startsWith('Fixed:')).toBe(true);
     expect(notes).not.toContain('## [2.5.0]');
     expect(changelogNotes('## [1.0.0]\n- a', '9.9.9')).toBe('');
   });
