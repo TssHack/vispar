@@ -337,25 +337,31 @@ export async function readMkvTrack(fetchRange: RangeFetcher, index: MkvIndex, tr
     options.onProgress([...cues].sort((a, b) => a.start - b.start));
   };
 
+  /** Lines whose download failed (after the fetcher's own retries); read again once at the end. */
+  const failed: MkvCuePoint[] = [];
+  const readPoint = async (point: MkvCuePoint) => {
+    const clusterAt = index.segmentStart + point.cluster;
+    const from5 = clusterAt + 5 + point.relative;
+    const buf = await fetchRange(from5, from5 + 7 + BLOCK_BYTES - 1);
+    const found = blockText(buf, track.number);
+    if (!found) return;
+    const lines = linesFromText(decodeSubtitleBytes(found.payload), track.format);
+    if (!lines.length) return;
+    const start = toSeconds(point.time);
+    const dur = point.duration ?? found.duration;
+    const cue: Cue = { start, end: dur ? start + toSeconds(dur) : start + 4, lines };
+    if (!dur) guessed.add(cue);
+    cues.push(cue);
+    report();
+  };
   const worker = async () => {
     while (next < order.length && !options.signal?.aborted) {
       const point = order[next++]!;
-      const clusterAt = index.segmentStart + point.cluster;
-      const from5 = clusterAt + 5 + point.relative;
       try {
-        const buf = await fetchRange(from5, from5 + 7 + BLOCK_BYTES - 1);
-        const found = blockText(buf, track.number);
-        if (!found) continue;
-        const lines = linesFromText(decodeSubtitleBytes(found.payload), track.format);
-        if (!lines.length) continue;
-        const start = toSeconds(point.time);
-        const dur = point.duration ?? found.duration;
-        const cue: Cue = { start, end: dur ? start + toSeconds(dur) : start + 4, lines };
-        if (!dur) guessed.add(cue);
-        cues.push(cue);
-        report();
+        await readPoint(point);
       } catch {
-        // one missing line must not cost the rest
+        // one missing line must not cost the rest; it gets a second chance below
+        failed.push(point);
       }
     }
   };
@@ -363,6 +369,16 @@ export async function readMkvTrack(fetchRange: RangeFetcher, index: MkvIndex, tr
   // streams from the same host. Six subtitle requests starved the video (seen on a real file: playback
   // stalled while the lines loaded), so most connections stay free for it.
   await Promise.all(Array.from({ length: Math.max(1, Math.min(options.concurrency ?? 2, 4)) }, worker));
+  // A line lost to a stalled request used to stay missing for the whole film (#86). One more pass,
+  // one request at a time, once the rest is in and the video has its connections back.
+  for (const point of failed.sort((a, b) => a.time - b.time)) {
+    if (options.signal?.aborted) break;
+    try {
+      await readPoint(point);
+    } catch {
+      // still unreachable: give up on this line
+    }
+  }
   cues.sort((a, b) => a.start - b.start);
   // A line without a duration lasts until the next one at most.
   for (let i = 0; i + 1 < cues.length; i++) if (guessed.has(cues[i]!) && cues[i]!.end > cues[i + 1]!.start) cues[i]!.end = cues[i + 1]!.start;
