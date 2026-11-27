@@ -4,7 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@tanstack/react-query": "^5.108.0",
+    "@tanstack/react-query": "^5.108.4",
     "expo": "~58.0.26",
     "expo-application": "~58.1.2",
     "expo-build-properties": "~58.0.12",
@@ -41,7 +41,7 @@
     "sharp": "^0.35.5",
     "typescript": "~6.0.3",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "scripts": {
     "start": "expo start",
